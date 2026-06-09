@@ -1,4 +1,4 @@
-import { Image, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 
 import type { ShopifyProduct } from '../../types/shopify';
 import { colors } from '../../theme/colors';
@@ -7,11 +7,18 @@ import { formatPrice } from '../../utils/formatPrice';
 type ProductCardProps = {
   product: ShopifyProduct;
   onPress?: (product: ShopifyProduct) => void;
+  onAddToCart?: (product: ShopifyProduct) => void;
+  isAdding?: boolean;
 };
 
-export default function ProductCard({ product, onPress }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  onPress,
+  onAddToCart,
+  isAdding = false,
+}: ProductCardProps) {
   const imageUrl = product.images[0]?.url;
-  const isSoldOut = product.inventoryQuantity <= 0;
+  const canAdd = Boolean(onAddToCart);
 
   return (
     <Pressable
@@ -26,20 +33,34 @@ export default function ProductCard({ product, onPress }: ProductCardProps) {
             <Text className="text-xs text-gray-400">No image</Text>
           </View>
         )}
-        {isSoldOut ? (
-          <View className="absolute left-2 top-2 rounded-full bg-gray-900/80 px-2 py-1">
-            <Text className="text-[10px] font-semibold uppercase text-white">Sold out</Text>
-          </View>
-        ) : null}
       </View>
 
       <View className="p-3">
         <Text className="text-sm font-medium leading-5 text-gray-900" numberOfLines={2}>
           {product.title}
         </Text>
-        <Text className="mt-1 text-sm font-semibold" style={{ color: colors.brand }}>
-          {formatPrice(product.price)}
-        </Text>
+        <View className="mt-2 flex-row items-center justify-between gap-2">
+          <Text className="text-sm font-semibold" style={{ color: colors.brand }}>
+            {formatPrice(product.price)}
+          </Text>
+          {canAdd ? (
+            <Pressable
+              className="rounded-full px-3 py-1.5"
+              style={{ backgroundColor: colors.brand }}
+              disabled={isAdding}
+              onPress={(event) => {
+                event.stopPropagation();
+                onAddToCart?.(product);
+              }}
+            >
+              {isAdding ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text className="text-xs font-semibold text-white">Add</Text>
+              )}
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </Pressable>
   );

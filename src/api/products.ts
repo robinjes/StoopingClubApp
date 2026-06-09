@@ -15,7 +15,7 @@ const PRODUCTS_QUERY = `
           description
           handle
           tags
-          images(first: 20) {
+          images(first: 10) {
             edges {
               node {
                 url
@@ -23,7 +23,7 @@ const PRODUCTS_QUERY = `
               }
             }
           }
-          variants(first: 50) {
+          variants(first: 10) {
             edges {
               node {
                 id
@@ -57,6 +57,14 @@ type ProductsQueryResult = {
   };
 };
 
+export type ProductsPage = {
+  products: ShopifyProduct[];
+  pageInfo: {
+    hasNextPage: boolean;
+    endCursor: string | null;
+  };
+};
+
 function mapProductNode(node: ShopifyProductNode): ShopifyProduct {
   const variants = node.variants.edges.map(({ node: variant }) => ({
     id: variant.id,
@@ -87,26 +95,31 @@ function mapProductNode(node: ShopifyProductNode): ShopifyProduct {
   };
 }
 
+export async function fetchProductsPage(
+  first = 50,
+  after: string | null = null,
+): Promise<ProductsPage> {
+  const data: ProductsQueryResult = await storefrontFetch<ProductsQueryResult>(PRODUCTS_QUERY, {
+    first,
+    after,
+  });
+
+  return {
+    products: data.products.edges.map(({ node }) => mapProductNode(node)),
+    pageInfo: data.products.pageInfo,
+  };
+}
+
 export async function getProducts(): Promise<ShopifyProduct[]> {
   const products: ShopifyProduct[] = [];
   let hasNextPage = true;
   let after: string | null = null;
 
   while (hasNextPage) {
-    const data: ProductsQueryResult = await storefrontFetch<ProductsQueryResult>(
-      PRODUCTS_QUERY,
-      {
-        first: 50,
-        after,
-      },
-    );
-
-    const edges = data.products.edges;
-    const pageInfo = data.products.pageInfo;
-    products.push(...edges.map(({ node }) => mapProductNode(node)));
-
-    hasNextPage = pageInfo.hasNextPage;
-    after = pageInfo.endCursor;
+    const page = await fetchProductsPage(50, after);
+    products.push(...page.products);
+    hasNextPage = page.pageInfo.hasNextPage;
+    after = page.pageInfo.endCursor;
   }
 
   return products;

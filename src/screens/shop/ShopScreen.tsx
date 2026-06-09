@@ -1,117 +1,96 @@
-import { useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 
-import { getCollections } from '../../api/collections';
-import { getProducts } from '../../api/products';
 import CollectionsView from '../../components/shop/CollectionsView';
 import ProductGrid from '../../components/shop/ProductGrid';
 import ShopModeSwitcher, { type ShopMode } from '../../components/shop/ShopModeSwitcher';
 import StrollView from '../../components/shop/StrollView';
 import ScreenLayout from '../../components/layout/ScreenLayout';
+import { useAddToCart } from '../../hooks/useAddToCart';
+import { useOpenProduct } from '../../hooks/useOpenProduct';
+import { refreshShopData, useShopData } from '../../hooks/useShopData';
 import { useCollectionStore } from '../../store/collectionStore';
 import { useProductStore } from '../../store/productStore';
 import { colors } from '../../theme/colors';
+import { filterInStockProducts } from '../../utils/productStock';
 
 export default function ShopScreen() {
   const [mode, setMode] = useState<ShopMode>('grid');
 
+  useShopData();
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshShopData();
+    }, []),
+  );
+
+  const { handleAddToCart, addingProductId } = useAddToCart();
+  const openProduct = useOpenProduct();
+
   const products = useProductStore((state) => state.products);
   const isLoading = useProductStore((state) => state.isLoading);
+  const isLoadingMore = useProductStore((state) => state.isLoadingMore);
   const error = useProductStore((state) => state.error);
-  const setProducts = useProductStore((state) => state.setProducts);
-  const setLoading = useProductStore((state) => state.setLoading);
-  const setError = useProductStore((state) => state.setError);
-
   const collections = useCollectionStore((state) => state.collections);
-  const setCollections = useCollectionStore((state) => state.setCollections);
 
-  useEffect(() => {
-    let isMounted = true;
+  const inStockProducts = useMemo(() => filterInStockProducts(products), [products]);
 
-    async function loadShopData() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const [fetchedProducts, fetchedCollections] = await Promise.all([
-          getProducts(),
-          getCollections(),
-        ]);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setProducts(fetchedProducts);
-        setCollections(fetchedCollections);
-
-        if (fetchedProducts[0]) {
-          console.log('First product:', fetchedProducts[0]);
-        }
-      } catch (err) {
-        if (!isMounted) {
-          return;
-        }
-
-        const message = err instanceof Error ? err.message : 'Failed to load products.';
-        setError(message);
-        console.error('Failed to load shop data:', message);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void loadShopData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [setProducts, setCollections, setLoading, setError]);
-
-  const gridHeader = (
-    <View className="pb-3">
-      <Text
-        className="text-2xl text-brand"
-        style={{ fontFamily: 'Georgia', color: colors.brand }}
-      >
-        Grid
-      </Text>
-      <Text className="mt-1 text-sm text-gray-600">
-        Default view. All inventory in a clean scrollable grid.
-      </Text>
-    </View>
-  );
+  const showInitialLoader = isLoading && products.length === 0;
 
   return (
     <ScreenLayout>
-      <View className="flex-1" style={{ backgroundColor: '#F7F4EE' }}>
+      <View className="flex-1" style={{ backgroundColor: colors.cream }}>
         <ShopModeSwitcher mode={mode} onModeChange={setMode} />
 
-        {isLoading ? (
+        {showInitialLoader ? (
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator size="large" color={colors.brand} />
             <Text className="mt-3 text-sm text-gray-600">Loading inventory...</Text>
           </View>
         ) : null}
 
-        {error ? (
+        {error && products.length === 0 ? (
           <View className="flex-1 items-center justify-center px-6">
             <Text className="text-center text-sm text-red-600">{error}</Text>
           </View>
         ) : null}
 
-        {!isLoading && !error && mode === 'grid' ? (
-          <ProductGrid products={products} ListHeaderComponent={gridHeader} />
-        ) : null}
+        {!showInitialLoader && !(error && products.length === 0) ? (
+          <View className="flex-1">
+            {mode === 'grid' ? (
+              <ProductGrid
+                products={inStockProducts}
+                onProductPress={openProduct}
+                onAddToCart={handleAddToCart}
+                addingProductId={addingProductId}
+              />
+            ) : null}
+            {mode === 'collections' ? (
+              <CollectionsView
+                collections={collections}
+                products={inStockProducts}
+                onProductPress={openProduct}
+                onAddToCart={handleAddToCart}
+                addingProductId={addingProductId}
+              />
+            ) : null}
+            {mode === 'stroll' ? (
+              <StrollView
+                products={inStockProducts}
+                onProductPress={openProduct}
+                onAddToCart={handleAddToCart}
+                addingProductId={addingProductId}
+              />
+            ) : null}
 
-        {!isLoading && !error && mode === 'collections' ? (
-          <CollectionsView collections={collections} products={products} />
-        ) : null}
-
-        {!isLoading && !error && mode === 'stroll' ? (
-          <StrollView products={products} />
+            {isLoadingMore ? (
+              <View className="items-center py-3">
+                <ActivityIndicator size="small" color={colors.brand} />
+              </View>
+            ) : null}
+          </View>
         ) : null}
       </View>
     </ScreenLayout>

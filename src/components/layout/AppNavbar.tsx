@@ -1,33 +1,41 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { CompositeNavigationProp } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCart } from '../../context/CartContext';
-import type { RootStackParamList } from '../../navigation/types';
+import { useOverlay, type OverlayScreen } from '../../context/OverlayContext';
+import type { ShopStackParamList } from '../../navigation/stacks/ShopStack';
+import type { TabParamList } from '../../navigation/TabNavigator';
 import { colors } from '../../theme/colors';
+
+type RootNavigation = CompositeNavigationProp<
+  NativeStackNavigationProp<ShopStackParamList>,
+  BottomTabNavigationProp<TabParamList>
+>;
+
+type NavAction = {
+  label: string;
+  overlay: OverlayScreen;
+  icon: keyof typeof Ionicons.glyphMap;
+};
+
+const NAV_ACTIONS: NavAction[] = [
+  { label: 'Donate', overlay: 'donate', icon: 'heart-outline' },
+  { label: 'Contact Us', overlay: 'contact', icon: 'mail-outline' },
+  { label: 'Cart', overlay: 'cart', icon: 'cart-outline' },
+];
 
 type AppNavbarProps = {
   showBack?: boolean;
 };
 
-type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
-
-type NavAction = {
-  label: string;
-  route: keyof Pick<RootStackParamList, 'Donate' | 'Contact' | 'Cart'>;
-  icon: keyof typeof Ionicons.glyphMap;
-};
-
-const NAV_ACTIONS: NavAction[] = [
-  { label: 'Donate', route: 'Donate', icon: 'heart-outline' },
-  { label: 'Contact Us', route: 'Contact', icon: 'mail-outline' },
-  { label: 'Cart', route: 'Cart', icon: 'cart-outline' },
-];
-
 export default function AppNavbar({ showBack = false }: AppNavbarProps) {
   const navigation = useNavigation<RootNavigation>();
+  const { openOverlay } = useOverlay();
   const insets = useSafeAreaInsets();
   const { itemCount } = useCart();
 
@@ -42,30 +50,37 @@ export default function AppNavbar({ showBack = false }: AppNavbarProps) {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Go back"
-              className="mr-1 p-1"
+              className="p-1"
               onPress={() => navigation.goBack()}
             >
               <Ionicons name="chevron-back" size={22} color={colors.text} />
             </Pressable>
           ) : null}
-          <Pressable onPress={() => navigation.navigate('MainTabs')}>
-            <Text className="text-lg font-bold" style={{ color: colors.brand }}>
-              Stooping Club
-            </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go to home"
+            onPress={() => navigation.navigate('HomeTab')}
+          >
+            <Image
+              source={require('../../../assets/stoopylogo.png')}
+              className="h-9 w-9"
+              resizeMode="contain"
+              accessibilityLabel="Stooping Club"
+            />
           </Pressable>
         </View>
 
         <View className="flex-row items-center gap-1">
           {NAV_ACTIONS.map((action) => {
-            const isCart = action.route === 'Cart';
+            const isCart = action.overlay === 'cart';
 
             return (
               <Pressable
-                key={action.route}
+                key={action.overlay}
                 accessibilityRole="button"
                 accessibilityLabel={action.label}
                 className="items-center px-2 py-1"
-                onPress={() => navigation.navigate(action.route)}
+                onPress={() => openOverlay(action.overlay)}
               >
                 <View>
                   <Ionicons name={action.icon} size={20} color={colors.brand} />

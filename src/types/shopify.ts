@@ -36,7 +36,7 @@ export type ShopifyCollection = {
   description: string;
   handle: string;
   image: ShopifyImage | null;
-  products: ShopifyProduct[];
+  productIds: string[];
 };
 
 export type ShopifyPageInfo = {
@@ -84,6 +84,6 @@ export type ShopifyCollectionNode = {
   image: ShopifyImage | null;
   products: {
     pageInfo: ShopifyPageInfo;
-    edges: Array<{ node: ShopifyProductNode }>;
+    edges: Array<{ node: { id: string } }>;
   };
 };

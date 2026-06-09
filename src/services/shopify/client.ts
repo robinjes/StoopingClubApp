@@ -21,9 +21,11 @@ export async function shopifyFetch<T>(
 
   const response = await fetch(getStorefrontApiUrl(), {
     method: 'POST',
+    cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
       'X-Shopify-Storefront-Access-Token': shopifyConfig.storefrontAccessToken,
+      'Cache-Control': 'no-cache',
     },
     body: JSON.stringify({ query, variables }),
   });

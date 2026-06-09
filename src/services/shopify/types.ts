@@ -29,6 +29,7 @@ export type CartLine = {
   quantity: number;
   merchandiseId: string;
   title: string;
+  imageUrl: string | null;
   price: ShopifyMoney;
 };
 
