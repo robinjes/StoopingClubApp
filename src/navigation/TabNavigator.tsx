@@ -5,16 +5,19 @@ import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useOverlay } from '../context/OverlayContext';
+import { useWishlist } from '../hooks/useWishlist';
 import { colors } from '../theme/colors';
 import EventsStack from './stacks/EventsStack';
 import HomeStack from './stacks/HomeStack';
 import InvolvedStack from './stacks/InvolvedStack';
 import ResourcesStack from './stacks/ResourcesStack';
 import ShopStack from './stacks/ShopStack';
+import WishlistStack from './stacks/WishlistStack';
 
 export type TabParamList = {
   HomeTab: undefined;
   ShopTab: undefined;
+  WishlistTab: undefined;
   EventsTab: undefined;
   ResourcesTab: undefined;
   GetInvolvedTab: undefined;
@@ -36,6 +39,7 @@ function tabIcon(name: IoniconName) {
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
   const { closeOverlay } = useOverlay();
+  const { productIds } = useWishlist();
 
   return (
     <Tab.Navigator
@@ -76,6 +80,16 @@ export default function TabNavigator() {
         name="ShopTab"
         component={ShopStack}
         options={{ title: 'Shop', tabBarIcon: tabIcon('bag-outline') }}
+      />
+      <Tab.Screen
+        name="WishlistTab"
+        component={WishlistStack}
+        options={{
+          title: 'Wishlist',
+          tabBarIcon: tabIcon('heart-outline'),
+          tabBarBadge: productIds.length > 0 ? productIds.length : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.brand, fontSize: 10 },
+        }}
       />
       <Tab.Screen
         name="EventsTab"

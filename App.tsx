@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import SplashView from './src/components/layout/SplashView';
 import AppNavigator from './src/navigation/AppNavigator';
+import { rootNavigationRef } from './src/navigation/rootNavigation';
 import { CartProvider } from './src/context/CartContext';
 import { colors } from './src/theme/colors';
 
@@ -35,7 +36,7 @@ export default function App() {
           <SplashView onFinish={() => setShowSplash(false)} />
         ) : (
           <CartProvider>
-            <NavigationContainer theme={navigationTheme}>
+            <NavigationContainer ref={rootNavigationRef} theme={navigationTheme}>
               <AppNavigator />
               <StatusBar style="auto" />
             </NavigationContainer>

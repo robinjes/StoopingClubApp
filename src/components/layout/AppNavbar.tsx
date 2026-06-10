@@ -1,21 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import type { CompositeNavigationProp } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Image, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCart } from '../../context/CartContext';
 import { useOverlay, type OverlayScreen } from '../../context/OverlayContext';
-import type { ShopStackParamList } from '../../navigation/stacks/ShopStack';
-import type { TabParamList } from '../../navigation/TabNavigator';
+import { navigateToHomeTab } from '../../navigation/rootNavigation';
 import { colors } from '../../theme/colors';
-
-type RootNavigation = CompositeNavigationProp<
-  NativeStackNavigationProp<ShopStackParamList>,
-  BottomTabNavigationProp<TabParamList>
->;
 
 type NavAction = {
   label: string;
@@ -34,10 +25,15 @@ type AppNavbarProps = {
 };
 
 export default function AppNavbar({ showBack = false }: AppNavbarProps) {
-  const navigation = useNavigation<RootNavigation>();
-  const { openOverlay } = useOverlay();
+  const navigation = useNavigation();
+  const { openOverlay, closeOverlay } = useOverlay();
   const insets = useSafeAreaInsets();
   const { itemCount } = useCart();
+
+  function handleGoHome() {
+    closeOverlay();
+    navigateToHomeTab();
+  }
 
   return (
     <View
@@ -59,7 +55,7 @@ export default function AppNavbar({ showBack = false }: AppNavbarProps) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Go to home"
-            onPress={() => navigation.navigate('HomeTab')}
+            onPress={handleGoHome}
           >
             <Image
               source={require('../../../assets/stoopylogo.png')}

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
@@ -12,6 +13,7 @@ import {
 
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { useAddToCart } from '../../hooks/useAddToCart';
+import { useWishlist } from '../../hooks/useWishlist';
 import type { ShopStackParamList } from '../../navigation/stacks/ShopStack';
 import { useProductStore } from '../../store/productStore';
 import { colors } from '../../theme/colors';
@@ -27,6 +29,7 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
     state.products.find((item) => item.id === productId),
   );
   const { handleAddToCart, addingProductId } = useAddToCart();
+  const { isWishlisted, toggle } = useWishlist();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   if (!product) {
@@ -103,12 +106,29 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
         </View>
 
         <View className="mt-3 bg-white px-4 py-6">
-          <Text
-            className="text-2xl text-brand"
-            style={{ fontFamily: 'Georgia', color: colors.brand }}
-          >
-            {product.title}
-          </Text>
+          <View className="flex-row items-start justify-between gap-3">
+            <Text
+              className="flex-1 text-2xl text-brand"
+              style={{ fontFamily: 'Georgia', color: colors.brand }}
+            >
+              {product.title}
+            </Text>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                isWishlisted(product.id) ? 'Remove from wishlist' : 'Add to wishlist'
+              }
+              className="h-10 w-10 items-center justify-center rounded-full border border-gray-200"
+              onPress={() => void toggle(product.id)}
+            >
+              <Ionicons
+                name={isWishlisted(product.id) ? 'heart' : 'heart-outline'}
+                size={22}
+                color={isWishlisted(product.id) ? '#DC2626' : colors.textMuted}
+              />
+            </Pressable>
+          </View>
 
           <Text className="mt-3 text-2xl font-semibold text-gray-900">
             {formatPrice(product.price)}

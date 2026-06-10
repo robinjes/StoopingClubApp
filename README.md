@@ -10,12 +10,16 @@ stoopingclub app submission - StephenCurryGlazers
 
 ## Getting started
 
+1. Copy `.env.example` to `.env` in the project root.
+2. Edit `.env` with your Shopify credentials (do not edit `.env.example` — it is only a template).
+3. Install and start the app:
+
 ```bash
 npm install
 npx expo start
 ```
 
-Use `npx expo start -c` after changing NativeWind or Metro config.
+Restart Expo with `npx expo start -c` after changing `.env`, NativeWind, or Metro config.
 
 ## Navigation
 

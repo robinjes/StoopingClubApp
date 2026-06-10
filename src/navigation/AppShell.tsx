@@ -1,10 +1,11 @@
+import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useOverlay } from '../context/OverlayContext';
-import CartScreen from '../screens/shared/CartScreen';
 import ContactScreen from '../screens/shared/ContactScreen';
 import DonateScreen from '../screens/shared/DonateScreen';
+import CartStack from './stacks/CartStack';
 import TabNavigator from './TabNavigator';
 
 const TAB_BAR_HEIGHT = 56;
@@ -20,7 +21,13 @@ export default function AppShell() {
 
       {overlay ? (
         <View style={[styles.overlay, { bottom: tabBarOffset }]}>
-          {overlay === 'cart' ? <CartScreen /> : null}
+          {overlay === 'cart' ? (
+            <NavigationIndependentTree>
+              <NavigationContainer>
+                <CartStack />
+              </NavigationContainer>
+            </NavigationIndependentTree>
+          ) : null}
           {overlay === 'donate' ? <DonateScreen /> : null}
           {overlay === 'contact' ? <ContactScreen /> : null}
         </View>

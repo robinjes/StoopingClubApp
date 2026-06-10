@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -9,6 +10,7 @@ import {
   View,
 } from 'react-native';
 
+import { useWishlist } from '../../hooks/useWishlist';
 import type { ShopifyProduct } from '../../types/shopify';
 import { colors } from '../../theme/colors';
 import { formatPrice } from '../../utils/formatPrice';
@@ -41,6 +43,7 @@ export default function StrollView({
   onAddToCart,
   addingProductId = null,
 }: StrollViewProps) {
+  const { isWishlisted, toggle } = useWishlist();
   const strollProducts = useMemo(() => shuffleProducts(products), [products]);
 
   if (strollProducts.length === 0) {
@@ -65,6 +68,7 @@ export default function StrollView({
         const imageUrl = item.images[0]?.url;
         const isSoldOut = item.inventoryQuantity <= 0;
         const isAdding = addingProductId === item.id;
+        const wished = isWishlisted(item.id);
 
         return (
           <View style={{ height: STROLL_HEIGHT }} className="px-4 pb-4">
@@ -72,7 +76,7 @@ export default function StrollView({
               className="flex-1 overflow-hidden rounded-3xl border border-gray-100 bg-white"
               onPress={() => onProductPress?.(item)}
             >
-              <View className="flex-1 bg-gray-100">
+              <View className="relative flex-1 bg-gray-100">
                 {imageUrl ? (
                   <Image source={{ uri: imageUrl }} className="h-full w-full" resizeMode="cover" />
                 ) : (
@@ -80,6 +84,29 @@ export default function StrollView({
                     <Text className="text-sm text-gray-400">No image</Text>
                   </View>
                 )}
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={wished ? 'Remove from wishlist' : 'Add to wishlist'}
+                  className="absolute right-3 top-3 h-9 w-9 items-center justify-center rounded-full bg-white/95"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.12,
+                    shadowRadius: 3,
+                    elevation: 2,
+                  }}
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    void toggle(item.id);
+                  }}
+                >
+                  <Ionicons
+                    name={wished ? 'heart' : 'heart-outline'}
+                    size={20}
+                    color={wished ? '#DC2626' : colors.textMuted}
+                  />
+                </Pressable>
               </View>
 
               <View className="p-5">

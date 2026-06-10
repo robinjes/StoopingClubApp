@@ -1,5 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 
+import { useWishlist } from '../../hooks/useWishlist';
 import type { ShopifyProduct } from '../../types/shopify';
 import { colors } from '../../theme/colors';
 import { formatPrice } from '../../utils/formatPrice';
@@ -19,6 +21,8 @@ export default function ProductCard({
 }: ProductCardProps) {
   const imageUrl = product.images[0]?.url;
   const canAdd = Boolean(onAddToCart);
+  const { isWishlisted, toggle } = useWishlist();
+  const wished = isWishlisted(product.id);
 
   return (
     <Pressable
@@ -33,6 +37,22 @@ export default function ProductCard({
             <Text className="text-xs text-gray-400">No image</Text>
           </View>
         )}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={wished ? 'Remove from wishlist' : 'Add to wishlist'}
+          className="absolute right-2 top-2 h-8 w-8 items-center justify-center rounded-full bg-white/90"
+          onPress={(event) => {
+            event.stopPropagation();
+            void toggle(product.id);
+          }}
+        >
+          <Ionicons
+            name={wished ? 'heart' : 'heart-outline'}
+            size={18}
+            color={wished ? '#DC2626' : colors.textMuted}
+          />
+        </Pressable>
       </View>
 
       <View className="p-3">

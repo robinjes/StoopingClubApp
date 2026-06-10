@@ -1,20 +1,20 @@
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
-import * as WebBrowser from 'expo-web-browser';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { useCart } from '../../context/CartContext';
 import { useOverlay } from '../../context/OverlayContext';
-import type { TabParamList } from '../../navigation/TabNavigator';
+import type { CartStackParamList } from '../../navigation/stacks/CartStack';
+import { navigateToShopTab } from '../../navigation/rootNavigation';
 import { isShopifyConfigured } from '../../services/shopify';
 import { colors } from '../../theme/colors';
 import { formatPrice } from '../../utils/formatPrice';
 
-type TabNavigation = BottomTabNavigationProp<TabParamList>;
+type CartNavigation = NativeStackNavigationProp<CartStackParamList>;
 
 export default function CartScreen() {
-  const navigation = useNavigation<TabNavigation>();
+  const cartNavigation = useNavigation<CartNavigation>();
   const { closeOverlay } = useOverlay();
   const {
     cart,
@@ -27,12 +27,12 @@ export default function CartScreen() {
     clearError,
   } = useCart();
 
-  async function handleCheckout() {
+  function handleCheckout() {
     if (!checkoutUrl) {
       return;
     }
 
-    await WebBrowser.openBrowserAsync(checkoutUrl);
+    cartNavigation.navigate('Checkout', { checkoutUrl });
   }
 
   return (
@@ -74,7 +74,7 @@ export default function CartScreen() {
               style={{ backgroundColor: colors.brand }}
               onPress={() => {
                 closeOverlay();
-                navigation.navigate('ShopTab');
+                navigateToShopTab();
               }}
             >
               <Text className="font-semibold text-white">Start a cart</Text>
@@ -139,7 +139,7 @@ export default function CartScreen() {
                 className="items-center rounded-xl py-4"
                 style={{ backgroundColor: colors.brand, opacity: checkoutUrl ? 1 : 0.5 }}
                 disabled={!checkoutUrl || isLoading}
-                onPress={() => void handleCheckout()}
+                onPress={handleCheckout}
               >
                 {isLoading ? (
                   <ActivityIndicator color="#FFFFFF" />

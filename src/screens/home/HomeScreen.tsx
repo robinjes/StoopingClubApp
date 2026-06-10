@@ -1,98 +1,97 @@
-import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
-import type { ComponentProps } from 'react';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { ImageBackground, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
+import CountUpNumber from '../../components/home/CountUpNumber';
+import FadeUp from '../../components/home/FadeUp';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import type { TabParamList } from '../../navigation/TabNavigator';
 import { colors } from '../../theme/colors';
 
-type HomeLink = {
-  tab: keyof TabParamList;
-  label: string;
-  description: string;
-  icon: ComponentProps<typeof Ionicons>['name'];
-};
-
-const HOME_LINKS: HomeLink[] = [
-  {
-    tab: 'ShopTab',
-    label: 'Shop',
-    description: 'Browse curated finds and secondhand treasures.',
-    icon: 'bag-outline',
-  },
-  {
-    tab: 'EventsTab',
-    label: 'Events',
-    description: 'See what is happening around the club.',
-    icon: 'calendar-outline',
-  },
-  {
-    tab: 'ResourcesTab',
-    label: 'Resources',
-    description: 'Guides, tips, and community knowledge.',
-    icon: 'book-outline',
-  },
-  {
-    tab: 'GetInvolvedTab',
-    label: 'Get Involved',
-    description: 'Volunteer, partner, or join the movement.',
-    icon: 'people-outline',
-  },
-];
-
 type TabNavigation = BottomTabNavigationProp<TabParamList>;
+
+const IMPACT_STATS = [
+  { target: 8500, suffix: '+', label: 'Preloved Items Diverted From Landfill' },
+  { target: 2300, suffix: '+', label: 'Orders Fulfilled' },
+  { target: 47, suffix: '', label: 'Tons of CO2 Emissions Prevented' },
+  { target: 19, suffix: '', label: 'Global Partnerships' },
+] as const;
 
 export default function HomeScreen() {
   const navigation = useNavigation<TabNavigation>();
+  const { width } = useWindowDimensions();
+  const heroHeight = Math.max(300, width * 0.58);
+  const [animationKey, setAnimationKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setAnimationKey((key) => key + 1);
+    }, []),
+  );
 
   return (
     <ScreenLayout>
       <ScrollView
-        className="flex-1"
-        style={{ backgroundColor: colors.cream }}
-        contentContainerClassName="px-4 pb-10 pt-6"
+        className="flex-1 bg-white"
+        contentContainerClassName="pb-10"
         showsVerticalScrollIndicator={false}
       >
-        <View className="items-center">
-          <Image
-            source={require('../../../assets/stoopingclublogo.png')}
-            className="h-24 w-56"
-            resizeMode="contain"
-            accessibilityLabel="Stooping Club"
-          />
-          <Text
-            className="mt-4 text-center text-2xl text-brand"
-            style={{ fontFamily: 'Georgia', color: colors.brand }}
-          >
-            Welcome to Stooping Club
-          </Text>
-          <Text className="mt-2 max-w-sm text-center text-sm leading-5 text-gray-600">
-            Berkeley&apos;s community for finding, sharing, and giving furniture a second life.
-          </Text>
-        </View>
+        <ImageBackground
+          source={require('../../../assets/banner.png')}
+          style={{ width, height: heroHeight }}
+          resizeMode="cover"
+          accessibilityLabel="Stooping Club Oakland forest banner"
+        >
+          <View className="flex-1 items-center justify-center px-6">
+            <FadeUp animationKey={animationKey} delay={100}>
+              <Text className="text-center text-3xl font-bold text-white">
+                Stooping Club Oakland
+              </Text>
+            </FadeUp>
 
-        <View className="mt-8 gap-3">
-          {HOME_LINKS.map((link) => (
-            <Pressable
-              key={link.tab}
-              className="flex-row items-center rounded-2xl border border-gray-100 bg-white p-4"
-              onPress={() => navigation.navigate(link.tab)}
-            >
-              <View
-                className="h-11 w-11 items-center justify-center rounded-xl"
-                style={{ backgroundColor: colors.cardActive }}
+            <FadeUp animationKey={animationKey} delay={300}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Shop now"
+                className="mt-6 rounded-full px-10 py-3.5"
+                style={{ backgroundColor: colors.brand }}
+                onPress={() => navigation.navigate('ShopTab')}
               >
-                <Ionicons name={link.icon} size={22} color={colors.brand} />
+                <Text className="text-sm font-bold tracking-widest text-white">SHOP NOW</Text>
+              </Pressable>
+            </FadeUp>
+          </View>
+        </ImageBackground>
+
+        <View className="items-center px-6 pb-4 pt-10">
+          <FadeUp animationKey={animationKey} delay={450}>
+            <Text
+              className="text-center text-2xl"
+              style={{ fontFamily: 'Georgia', color: colors.brand }}
+            >
+              Our Impact at a Glance
+            </Text>
+          </FadeUp>
+
+          <View className="mt-8 w-full flex-row flex-wrap">
+            {IMPACT_STATS.map((stat, index) => (
+              <View key={stat.label} className="w-1/2 items-center px-3 py-5">
+                <CountUpNumber
+                  target={stat.target}
+                  suffix={stat.suffix}
+                  animationKey={animationKey}
+                  delay={600 + index * 120}
+                  className="text-3xl font-bold"
+                  style={{ color: colors.brand }}
+                />
+                <Text className="mt-2 text-center text-sm leading-5 text-gray-900">
+                  {stat.label}
+                </Text>
               </View>
-              <View className="ml-3 flex-1">
-                <Text className="text-base font-semibold text-gray-900">{link.label}</Text>
-                <Text className="mt-0.5 text-sm text-gray-500">{link.description}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </Pressable>
-          ))}
+            ))}
+          </View>
         </View>
       </ScrollView>
     </ScreenLayout>
