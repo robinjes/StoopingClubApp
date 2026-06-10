@@ -8,10 +8,27 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import SplashView from './src/components/layout/SplashView';
+import { CartProvider } from './src/context/CartContext';
+import { CustomerProvider } from './src/context/CustomerContext';
+import { usePickupReminders } from './src/hooks/usePickupReminders';
 import AppNavigator from './src/navigation/AppNavigator';
 import { rootNavigationRef } from './src/navigation/rootNavigation';
-import { CartProvider } from './src/context/CartContext';
 import { colors } from './src/theme/colors';
+
+function AppContent() {
+  usePickupReminders(true);
+
+  return (
+    <CustomerProvider>
+      <CartProvider>
+        <NavigationContainer ref={rootNavigationRef} theme={navigationTheme}>
+          <AppNavigator />
+          <StatusBar style="auto" />
+        </NavigationContainer>
+      </CartProvider>
+    </CustomerProvider>
+  );
+}
 
 const navigationTheme = {
   ...DefaultTheme,
@@ -35,12 +52,7 @@ export default function App() {
         {showSplash ? (
           <SplashView onFinish={() => setShowSplash(false)} />
         ) : (
-          <CartProvider>
-            <NavigationContainer ref={rootNavigationRef} theme={navigationTheme}>
-              <AppNavigator />
-              <StatusBar style="auto" />
-            </NavigationContainer>
-          </CartProvider>
+          <AppContent />
         )}
       </View>
     </SafeAreaProvider>

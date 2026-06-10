@@ -4,6 +4,7 @@ import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { useCart } from '../../context/CartContext';
+import { useCustomer } from '../../context/CustomerContext';
 import { useOverlay } from '../../context/OverlayContext';
 import type { CartStackParamList } from '../../navigation/stacks/CartStack';
 import { navigateToShopTab } from '../../navigation/rootNavigation';
@@ -26,9 +27,10 @@ export default function CartScreen() {
     removeItem,
     clearError,
   } = useCart();
+  const { checkoutRestricted, noShowCount } = useCustomer();
 
   function handleCheckout() {
-    if (!checkoutUrl) {
+    if (!checkoutUrl || checkoutRestricted) {
       return;
     }
 
@@ -128,6 +130,16 @@ export default function CartScreen() {
             ))}
 
             <View className="mt-auto border-t border-gray-200 pt-4">
+              {checkoutRestricted ? (
+                <View className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                  <Text className="text-sm font-semibold text-red-800">Checkout paused</Text>
+                  <Text className="mt-1 text-sm leading-5 text-red-700">
+                    You have {noShowCount} recent no-shows. Pick up existing orders or contact the
+                    team before placing a new one.
+                  </Text>
+                </View>
+              ) : null}
+
               <View className="mb-4 flex-row items-center justify-between">
                 <Text className="text-base text-gray-600">Subtotal</Text>
                 <Text className="text-lg font-semibold text-gray-900">
@@ -137,8 +149,11 @@ export default function CartScreen() {
 
               <Pressable
                 className="items-center rounded-xl py-4"
-                style={{ backgroundColor: colors.brand, opacity: checkoutUrl ? 1 : 0.5 }}
-                disabled={!checkoutUrl || isLoading}
+                style={{
+                  backgroundColor: colors.brand,
+                  opacity: checkoutUrl && !checkoutRestricted ? 1 : 0.5,
+                }}
+                disabled={!checkoutUrl || isLoading || checkoutRestricted}
                 onPress={handleCheckout}
               >
                 {isLoading ? (

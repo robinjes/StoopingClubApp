@@ -30,6 +30,7 @@ type CartContextValue = {
   addItem: (merchandiseId: string, quantity?: number) => Promise<void>;
   updateItem: (lineId: string, quantity: number) => Promise<void>;
   removeItem: (lineId: string) => Promise<void>;
+  clearCart: () => Promise<void>;
   clearError: () => void;
 };
 
@@ -178,6 +179,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [applyCart, cart],
   );
 
+  const clearCart = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await applyCart(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to clear cart.';
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [applyCart]);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -193,9 +208,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addItem,
       updateItem,
       removeItem,
+      clearCart,
       clearError,
     }),
-    [cart, isLoading, error, initializeCart, addItem, updateItem, removeItem, clearError],
+    [cart, isLoading, error, initializeCart, addItem, updateItem, removeItem, clearCart, clearError],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

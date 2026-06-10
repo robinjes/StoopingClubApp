@@ -1,15 +1,17 @@
-import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
 import { ImageBackground, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
 import CountUpNumber from '../../components/home/CountUpNumber';
 import FadeUp from '../../components/home/FadeUp';
 import ScreenLayout from '../../components/layout/ScreenLayout';
+import type { HomeStackParamList } from '../../navigation/stacks/HomeStack';
 import type { TabParamList } from '../../navigation/TabNavigator';
 import { colors } from '../../theme/colors';
 
+type HomeNavigation = NativeStackNavigationProp<HomeStackParamList>;
 type TabNavigation = BottomTabNavigationProp<TabParamList>;
 
 const IMPACT_STATS = [
@@ -20,7 +22,8 @@ const IMPACT_STATS = [
 ] as const;
 
 export default function HomeScreen() {
-  const navigation = useNavigation<TabNavigation>();
+  const navigation = useNavigation<HomeNavigation>();
+  const tabNavigation = useNavigation<TabNavigation>();
   const { width } = useWindowDimensions();
   const heroHeight = Math.max(300, width * 0.58);
   const [animationKey, setAnimationKey] = useState(0);
@@ -57,7 +60,7 @@ export default function HomeScreen() {
                 accessibilityLabel="Shop now"
                 className="mt-6 rounded-full px-10 py-3.5"
                 style={{ backgroundColor: colors.brand }}
-                onPress={() => navigation.navigate('ShopTab')}
+                onPress={() => tabNavigation.navigate('ShopTab')}
               >
                 <Text className="text-sm font-bold tracking-widest text-white">SHOP NOW</Text>
               </Pressable>
@@ -65,8 +68,20 @@ export default function HomeScreen() {
           </View>
         </ImageBackground>
 
-        <View className="items-center px-6 pb-4 pt-10">
+        <View className="items-center px-6 pb-2 pt-10">
           <FadeUp animationKey={animationKey} delay={450}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View my pickups"
+              className="mb-8 rounded-full border px-6 py-3"
+              style={{ borderColor: colors.brand, backgroundColor: colors.cardActive }}
+              onPress={() => navigation.navigate('Pickups')}
+            >
+              <Text className="text-sm font-semibold" style={{ color: colors.brand }}>
+                My pickups & no-show status
+              </Text>
+            </Pressable>
+
             <Text
               className="text-center text-2xl"
               style={{ fontFamily: 'Georgia', color: colors.brand }}

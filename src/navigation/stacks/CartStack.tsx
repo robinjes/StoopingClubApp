@@ -2,10 +2,12 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import CartScreen from '../../screens/shared/CartScreen';
 import CheckoutScreen from '../../screens/shared/CheckoutScreen';
+import OrderConfirmationScreen from '../../screens/shared/OrderConfirmationScreen';
 
 export type CartStackParamList = {
   Cart: undefined;
   Checkout: { checkoutUrl: string };
+  OrderConfirmation: undefined;
 };
 
 const Stack = createNativeStackNavigator<CartStackParamList>();
@@ -18,6 +20,11 @@ export default function CartStack() {
         name="Checkout"
         component={CheckoutScreen}
         options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="OrderConfirmation"
+        component={OrderConfirmationScreen}
+        options={{ animation: 'fade' }}
       />
     </Stack.Navigator>
   );
