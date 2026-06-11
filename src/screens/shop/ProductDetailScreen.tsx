@@ -16,13 +16,14 @@ import { useAddToCart } from '../../hooks/useAddToCart';
 import { useWishlist } from '../../hooks/useWishlist';
 import type { ShopStackParamList } from '../../navigation/stacks/ShopStack';
 import { useProductStore } from '../../store/productStore';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { formatPrice } from '../../utils/formatPrice';
 import { stripHtml } from '../../utils/productText';
 
 type ProductDetailScreenProps = NativeStackScreenProps<ShopStackParamList, 'ProductDetail'>;
 
 export default function ProductDetailScreen({ route }: ProductDetailScreenProps) {
+  const { colors } = useTheme();
   const { productId } = route.params;
   const { width } = useWindowDimensions();
   const product = useProductStore((state) =>
@@ -36,7 +37,7 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
     return (
       <ScreenLayout showBack>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-center text-sm text-gray-500">Product not found.</Text>
+          <Text className="text-center text-sm text-gray-500 dark:text-gray-400">Product not found.</Text>
         </View>
       </ScreenLayout>
     );
@@ -57,15 +58,15 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
         contentContainerClassName="pb-10"
         showsVerticalScrollIndicator={false}
       >
-        <View className="bg-white px-4 pb-3 pt-2">
-          <Text className="text-xs text-gray-500">
+        <View className="bg-white dark:bg-gray-950 px-4 pb-3 pt-2">
+          <Text className="text-xs text-gray-500 dark:text-gray-400">
             Shop / {category} / {product.title}
           </Text>
         </View>
 
-        <View className="bg-white px-4 pb-6">
+        <View className="bg-white dark:bg-gray-950 px-4 pb-6">
           <View
-            className="items-center justify-center overflow-hidden rounded-2xl bg-gray-100"
+            className="items-center justify-center overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800"
             style={{ height: width * 0.85 }}
           >
             {selectedImage ? (
@@ -105,7 +106,7 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
           ) : null}
         </View>
 
-        <View className="mt-3 bg-white px-4 py-6">
+        <View className="mt-3 bg-white dark:bg-gray-950 px-4 py-6">
           <View className="flex-row items-start justify-between gap-3">
             <Text
               className="flex-1 text-2xl text-brand"
@@ -119,7 +120,7 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
               accessibilityLabel={
                 isWishlisted(product.id) ? 'Remove from wishlist' : 'Add to wishlist'
               }
-              className="h-10 w-10 items-center justify-center rounded-full border border-gray-200"
+              className="h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-800"
               onPress={() => void toggle(product.id)}
             >
               <Ionicons
@@ -130,13 +131,13 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
             </Pressable>
           </View>
 
-          <Text className="mt-3 text-2xl font-semibold text-gray-900">
+          <Text className="mt-3 text-2xl font-semibold text-gray-900 dark:text-gray-100">
             {formatPrice(product.price)}
           </Text>
 
-          <Text className="mt-2 text-sm text-gray-500">Local pickup only</Text>
+          <Text className="mt-2 text-sm text-gray-500 dark:text-gray-400">Local pickup only</Text>
 
-          <Text className="mt-3 text-sm text-gray-700">
+          <Text className="mt-3 text-sm text-gray-700 dark:text-gray-300">
             Availability:{' '}
             <Text style={{ color: isSoldOut ? '#DC2626' : colors.brand, fontWeight: '600' }}>
               {isSoldOut ? 'Out of stock' : `${product.inventoryQuantity} in stock`}
@@ -161,14 +162,14 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
             )}
           </Pressable>
 
-          <Text className="mt-5 text-sm text-gray-600">
-            Category: <Text className="font-medium text-gray-800">{category}</Text>
+          <Text className="mt-5 text-sm text-gray-600 dark:text-gray-400">
+            Category: <Text className="font-medium text-gray-800 dark:text-gray-200">{category}</Text>
           </Text>
 
           {description ? (
             <View className="mt-6 border-t border-gray-100 pt-5">
-              <Text className="text-base font-semibold text-gray-900">About this item</Text>
-              <Text className="mt-2 text-sm leading-6 text-gray-600">{description}</Text>
+              <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">About this item</Text>
+              <Text className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-400">{description}</Text>
             </View>
           ) : null}
         </View>

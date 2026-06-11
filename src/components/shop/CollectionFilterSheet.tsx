@@ -14,7 +14,7 @@ import { getCategoryDescription } from '../../data/categoryDescriptions';
 import { getCategoryIcon } from '../../data/categoryIcons';
 import { getPickupLocationById, PICKUP_LOCATIONS } from '../../data/pickupLocations';
 import type { ShopifyCollection, ShopifyProduct } from '../../types/shopify';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import {
   getCategoryById,
   getCategoryProductCount,
@@ -53,6 +53,8 @@ type FilterOptionRowProps = {
 };
 
 function FilterOptionRow({ option, selected, onPress }: FilterOptionRowProps) {
+  const { colors } = useTheme();
+
   return (
     <Pressable
       onPress={onPress}
@@ -83,7 +85,7 @@ function FilterOptionRow({ option, selected, onPress }: FilterOptionRowProps) {
         >
           {option.label}
         </Text>
-        <Text className="mt-0.5 text-sm text-gray-500" numberOfLines={2}>
+        <Text className="mt-0.5 text-sm text-gray-500 dark:text-gray-400" numberOfLines={2}>
           {option.description}
         </Text>
       </View>
@@ -118,7 +120,7 @@ function FilterSection({
 
   return (
     <View className="mb-5">
-      <Text className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+      <Text className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         {title}
       </Text>
       {options.map((option) => (
@@ -149,6 +151,7 @@ export default function CollectionFilterSheet({
   onClose,
   onApply,
 }: CollectionFilterSheetProps) {
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [pendingLocationId, setPendingLocationId] = useState(filters.locationId);
@@ -286,7 +289,7 @@ export default function CollectionFilterSheet({
         <Pressable className="flex-1" onPress={onClose} accessibilityLabel="Close filters" />
 
         <View
-          className="rounded-t-3xl bg-white px-5 pt-5"
+          className="rounded-t-3xl bg-white dark:bg-gray-950 px-5 pt-5"
           style={{
             maxHeight: height * 0.88,
             paddingBottom: Math.max(insets.bottom, 16),
@@ -295,12 +298,12 @@ export default function CollectionFilterSheet({
           <View className="mb-1 flex-row items-start justify-between">
             <View className="flex-1 pr-4">
               <Text
-                className="text-2xl text-gray-900"
+                className="text-2xl text-gray-900 dark:text-gray-100"
                 style={{ fontFamily: 'Georgia' }}
               >
                 Filter collections
               </Text>
-              <Text className="mt-1 text-sm leading-5 text-gray-500">
+              <Text className="mt-1 text-sm leading-5 text-gray-500 dark:text-gray-400">
                 Choose a pickup location and category to narrow what you see.
               </Text>
             </View>

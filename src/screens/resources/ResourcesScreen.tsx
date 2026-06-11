@@ -6,7 +6,7 @@ export default function ResourcesScreen() {
   return (
     <ScreenLayout>
       <View className="flex-1 items-center justify-center">
-        <Text className="text-xl font-semibold text-gray-900">Resources</Text>
+        <Text className="text-xl font-semibold text-gray-900 dark:text-gray-100">Resources</Text>
       </View>
     </ScreenLayout>
   );

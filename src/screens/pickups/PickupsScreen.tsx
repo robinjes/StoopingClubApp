@@ -13,8 +13,9 @@ import {
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { MAX_NO_SHOWS_BEFORE_RESTRICTION } from '../../constants/noShow';
 import { useCustomer } from '../../context/CustomerContext';
+import { useOverlay } from '../../context/OverlayContext';
 import { getCurrentPickupSite } from '../../data/pickupSeason';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import type { CustomerOrder } from '../../types/customer';
 import {
   formatPickupSunday,
@@ -22,7 +23,10 @@ import {
   getPickupStatusLabel,
 } from '../../utils/noShow';
 
-function statusColors(status: ReturnType<typeof getOrderPickupStatus>) {
+function statusColors(
+  status: ReturnType<typeof getOrderPickupStatus>,
+  colors: ReturnType<typeof useTheme>['colors'],
+) {
   switch (status) {
     case 'picked_up':
       return { bg: '#E8F0E2', text: colors.brand, border: colors.brand };
@@ -44,8 +48,9 @@ function OrderCard({
   confirmingOrderId: string | null;
   onConfirmPickup: (orderId: string) => void;
 }) {
+  const { colors } = useTheme();
   const status = getOrderPickupStatus(order);
-  const palette = statusColors(status);
+  const palette = statusColors(status, colors);
   const isConfirming = confirmingOrderId === order.id;
 
   return (
@@ -55,8 +60,8 @@ function OrderCard({
     >
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
-          <Text className="text-base font-semibold text-gray-900">{order.name}</Text>
-          <Text className="mt-1 text-sm text-gray-500">
+          <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">{order.name}</Text>
+          <Text className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Pickup {formatPickupSunday(order)}
           </Text>
         </View>
@@ -91,7 +96,13 @@ function OrderCard({
   );
 }
 
-export default function PickupsScreen() {
+type PickupsScreenProps = {
+  onClose?: () => void;
+};
+
+export default function PickupsScreen({ onClose }: PickupsScreenProps) {
+  const { colors } = useTheme();
+  const { openAccount } = useOverlay();
   const {
     isConfigured,
     isAuthenticated,
@@ -102,7 +113,6 @@ export default function PickupsScreen() {
     noShowCount,
     checkoutRestricted,
     error,
-    login,
     logout,
     refreshOrders,
     confirmPickup,
@@ -110,7 +120,6 @@ export default function PickupsScreen() {
   } = useCustomer();
 
   const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
-  const [isSigningIn, setIsSigningIn] = useState(false);
   const pickupSite = getCurrentPickupSite();
 
   useFocusEffect(
@@ -133,17 +142,9 @@ export default function PickupsScreen() {
     [orders],
   );
 
-  async function handleLogin() {
-    setIsSigningIn(true);
+  function handleLogin() {
     clearError();
-
-    try {
-      await login();
-    } catch {
-      // Error is stored in context.
-    } finally {
-      setIsSigningIn(false);
-    }
+    openAccount('CustomerSignIn');
   }
 
   async function handleConfirmPickup(orderId: string) {
@@ -160,7 +161,7 @@ export default function PickupsScreen() {
   }
 
   return (
-    <ScreenLayout showBack>
+    <ScreenLayout showBack onBack={onClose}>
       <ScrollView
         className="flex-1 px-4 pt-4"
         contentContainerClassName="pb-10"
@@ -173,12 +174,12 @@ export default function PickupsScreen() {
         }
       >
         <Text
-          className="text-2xl text-gray-900"
+          className="text-2xl text-gray-900 dark:text-gray-100"
           style={{ fontFamily: 'Georgia', color: colors.brand }}
         >
           My pickups
         </Text>
-        <Text className="mt-2 text-sm leading-5 text-gray-600">
+        <Text className="mt-2 text-sm leading-5 text-gray-600 dark:text-gray-400">
           Confirm before Sunday, then pick up at {pickupSite.name}. We track no-shows to keep pickup
           fair for everyone.
         </Text>
@@ -207,20 +208,15 @@ export default function PickupsScreen() {
         {!isLoading && isConfigured && !isAuthenticated ? (
           <View className="mt-8 items-center">
             <Ionicons name="person-circle-outline" size={56} color={colors.textMuted} />
-            <Text className="mt-4 text-center text-base text-gray-700">
+            <Text className="mt-4 text-center text-base text-gray-700 dark:text-gray-300">
               Sign in with your Stooping Club account to view orders and confirm pickup.
             </Text>
             <Pressable
               className="mt-5 rounded-xl px-6 py-3.5"
-              style={{ backgroundColor: colors.brand, opacity: isSigningIn ? 0.7 : 1 }}
-              disabled={isSigningIn}
-              onPress={() => void handleLogin()}
+              style={{ backgroundColor: colors.brand }}
+              onPress={handleLogin}
             >
-              {isSigningIn ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text className="font-semibold text-white">Sign in</Text>
-              )}
+              <Text className="font-semibold text-white">Sign in</Text>
             </Pressable>
           </View>
         ) : null}
@@ -231,14 +227,14 @@ export default function PickupsScreen() {
               className="mt-6 rounded-2xl border px-4 py-4"
               style={{ borderColor: colors.border, backgroundColor: colors.cardActive }}
             >
-              <Text className="text-sm text-gray-600">Signed in as</Text>
-              <Text className="mt-1 text-base font-semibold text-gray-900">
+              <Text className="text-sm text-gray-600 dark:text-gray-400">Signed in as</Text>
+              <Text className="mt-1 text-base font-semibold text-gray-900 dark:text-gray-100">
                 {profile?.firstName
                   ? `${profile.firstName}${profile.lastName ? ` ${profile.lastName}` : ''}`
                   : profile?.email ?? 'Stooping Club member'}
               </Text>
               <View className="mt-3 flex-row items-center justify-between">
-                <Text className="text-sm text-gray-600">
+                <Text className="text-sm text-gray-600 dark:text-gray-400">
                   No-shows: {noShowCount} / {MAX_NO_SHOWS_BEFORE_RESTRICTION}
                 </Text>
                 <Pressable onPress={() => void logout()}>
@@ -255,9 +251,9 @@ export default function PickupsScreen() {
               ) : null}
             </View>
 
-            <Text className="mb-3 mt-8 text-base font-semibold text-gray-900">Active orders</Text>
+            <Text className="mb-3 mt-8 text-base font-semibold text-gray-900 dark:text-gray-100">Active orders</Text>
             {activeOrders.length === 0 ? (
-              <Text className="text-sm text-gray-500">No upcoming pickups right now.</Text>
+              <Text className="text-sm text-gray-500 dark:text-gray-400">No upcoming pickups right now.</Text>
             ) : (
               activeOrders.map((order) => (
                 <OrderCard
@@ -271,7 +267,7 @@ export default function PickupsScreen() {
 
             {pastNoShows.length > 0 ? (
               <>
-                <Text className="mb-3 mt-8 text-base font-semibold text-gray-900">
+                <Text className="mb-3 mt-8 text-base font-semibold text-gray-900 dark:text-gray-100">
                   No-show history
                 </Text>
                 {pastNoShows.map((order) => (

@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, Text } from 'react-native';
 
 import type { ShopifyCollection } from '../../types/shopify';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 
 type CollectionChipsProps = {
   collections: ShopifyCollection[];
@@ -14,6 +14,7 @@ export default function CollectionChips({
   selectedId,
   onSelect,
 }: CollectionChipsProps) {
+  const { colors } = useTheme();
   return (
     <ScrollView
       horizontal

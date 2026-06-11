@@ -11,12 +11,13 @@ import { useShopData } from '../../hooks/useShopData';
 import { useWishlist } from '../../hooks/useWishlist';
 import type { WishlistStackParamList } from '../../navigation/stacks/WishlistStack';
 import { useProductStore } from '../../store/productStore';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import type { ShopifyProduct } from '../../types/shopify';
 
 type WishlistNavigation = NativeStackNavigationProp<WishlistStackParamList>;
 
 export default function WishlistScreen() {
+  const { colors } = useTheme();
   useShopData();
 
   const navigation = useNavigation<WishlistNavigation>();
@@ -48,7 +49,7 @@ export default function WishlistScreen() {
           >
             Wishlist
           </Text>
-          <Text className="mt-1 text-sm text-gray-500">
+          <Text className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {wishlistProducts.length === 0
               ? 'Save items you love with the heart icon.'
               : `${wishlistProducts.length} saved item${wishlistProducts.length === 1 ? '' : 's'}`}
@@ -57,7 +58,7 @@ export default function WishlistScreen() {
 
         {wishlistProducts.length === 0 ? (
           <View className="flex-1 items-center justify-center px-6">
-            <Text className="text-center text-sm text-gray-500">
+            <Text className="text-center text-sm text-gray-500 dark:text-gray-400">
               Your wishlist is empty. Tap the heart on any product to save it here.
             </Text>
           </View>

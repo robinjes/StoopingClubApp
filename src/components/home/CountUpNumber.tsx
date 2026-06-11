@@ -7,6 +7,7 @@ type CountUpNumberProps = {
   delay?: number;
   duration?: number;
   suffix?: string;
+  prefix?: string;
   className?: string;
   style?: TextProps['style'];
 };
@@ -17,6 +18,7 @@ export default function CountUpNumber({
   delay = 0,
   duration = 1400,
   suffix = '',
+  prefix = '',
   className,
   style,
 }: CountUpNumberProps) {
@@ -46,7 +48,7 @@ export default function CountUpNumber({
   }, [animationKey, delay, duration, target]);
 
   const showSuffix = suffix && value >= target;
-  const display = `${value.toLocaleString()}${showSuffix ? suffix : ''}`;
+  const display = `${prefix}${value.toLocaleString()}${showSuffix ? suffix : ''}`;
 
   return (
     <Text className={className} style={style}>

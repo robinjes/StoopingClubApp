@@ -10,6 +10,7 @@ type ProductGridProps = {
   onAddToCart?: (product: ShopifyProduct) => void;
   addingProductId?: string | null;
   ListHeaderComponent?: ReactElement | null;
+  emptyMessage?: string;
 };
 
 export default function ProductGrid({
@@ -18,6 +19,7 @@ export default function ProductGrid({
   onAddToCart,
   addingProductId = null,
   ListHeaderComponent,
+  emptyMessage,
 }: ProductGridProps) {
   const { width } = useWindowDimensions();
   const cardWidth = (width - 32 - 12) / 2;
@@ -25,7 +27,9 @@ export default function ProductGrid({
   if (products.length === 0 && !ListHeaderComponent) {
     return (
       <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-center text-sm text-gray-500">No in-stock products to show yet.</Text>
+        <Text className="text-center text-sm text-gray-500 dark:text-gray-400">
+          {emptyMessage ?? 'No in-stock products to show yet.'}
+        </Text>
       </View>
     );
   }
@@ -43,8 +47,8 @@ export default function ProductGrid({
           <View>
             {ListHeaderComponent}
             {products.length === 0 ? (
-              <Text className="px-4 pb-6 text-center text-sm text-gray-500">
-                No in-stock products in this category yet.
+              <Text className="px-4 pb-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                {emptyMessage ?? 'No in-stock products in this category yet.'}
               </Text>
             ) : null}
           </View>

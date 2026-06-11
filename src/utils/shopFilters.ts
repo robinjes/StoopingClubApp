@@ -1,23 +1,26 @@
 import type { ShopSortOption } from '../components/shop/ShopToolbar';
 import type { ShopifyProduct } from '../types/shopify';
+import { matchesProductSearch, scoreProductMatch } from './fuzzySearch';
 
-function normalize(value: string): string {
-  return value.trim().toLowerCase();
-}
-
-export function filterProductsBySearch(
-  products: ShopifyProduct[],
-  query: string,
-): ShopifyProduct[] {
-  const needle = normalize(query);
-  if (!needle) {
+export function searchProducts(products: ShopifyProduct[], query: string): ShopifyProduct[] {
+  const trimmed = query.trim();
+  if (!trimmed) {
     return products;
   }
 
-  return products.filter((product) => {
-    const haystack = [product.title, product.description, ...product.tags].join(' ').toLowerCase();
-    return haystack.includes(needle);
-  });
+  return products
+    .map((product) => ({
+      product,
+      score: scoreProductMatch(product, trimmed),
+    }))
+    .filter(({ score }) => score >= 0.42)
+    .sort((left, right) => right.score - left.score)
+    .map(({ product }) => product);
+}
+
+/** @deprecated Use searchProducts — kept for ShopCatalogView compatibility */
+export function filterProductsBySearch(products: ShopifyProduct[], query: string): ShopifyProduct[] {
+  return searchProducts(products, query);
 }
 
 export function sortProducts(products: ShopifyProduct[], sort: ShopSortOption): ShopifyProduct[] {
@@ -39,3 +42,9 @@ export function sortProducts(products: ShopifyProduct[], sort: ShopSortOption): 
       return sorted;
   }
 }
+
+export function hasActiveSearch(query: string): boolean {
+  return query.trim().length > 0;
+}
+
+export { matchesProductSearch };

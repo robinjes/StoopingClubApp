@@ -7,11 +7,20 @@ import {
   type ReactNode,
 } from 'react';
 
-export type OverlayScreen = 'cart' | 'donate' | 'contact';
+export type OverlayScreen = 'cart' | 'donate' | 'contact' | 'account';
+
+export type AccountRoute =
+  | 'SignInShop'
+  | 'SignInEmail'
+  | 'CustomerSignIn'
+  | 'Orders'
+  | 'Profile';
 
 type OverlayContextValue = {
   overlay: OverlayScreen | null;
+  accountRoute: AccountRoute;
   openOverlay: (screen: OverlayScreen) => void;
+  openAccount: (route: AccountRoute) => void;
   closeOverlay: () => void;
 };
 
@@ -19,9 +28,15 @@ const OverlayContext = createContext<OverlayContextValue | null>(null);
 
 export function OverlayProvider({ children }: { children: ReactNode }) {
   const [overlay, setOverlay] = useState<OverlayScreen | null>(null);
+  const [accountRoute, setAccountRoute] = useState<AccountRoute>('SignInShop');
 
   const openOverlay = useCallback((screen: OverlayScreen) => {
     setOverlay(screen);
+  }, []);
+
+  const openAccount = useCallback((route: AccountRoute) => {
+    setAccountRoute(route);
+    setOverlay('account');
   }, []);
 
   const closeOverlay = useCallback(() => {
@@ -29,8 +44,8 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ overlay, openOverlay, closeOverlay }),
-    [overlay, openOverlay, closeOverlay],
+    () => ({ overlay, accountRoute, openOverlay, openAccount, closeOverlay }),
+    [overlay, accountRoute, openOverlay, openAccount, closeOverlay],
   );
 
   return <OverlayContext.Provider value={value}>{children}</OverlayContext.Provider>;

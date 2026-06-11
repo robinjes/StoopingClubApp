@@ -2,11 +2,11 @@
   "expo": {
     "name": "StoopingClubApp",
     "slug": "StoopingClubApp",
-    "scheme": "stoopingclubapp",
+    "scheme": ["stoopingclubapp", "shop.74832183474.app"],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/stoopingclublogo.png",
       "resizeMode": "contain",

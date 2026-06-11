@@ -2,10 +2,17 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from '../../screens/home/HomeScreen';
 import PickupsScreen from '../../screens/pickups/PickupsScreen';
+import OrderMessagePreviewScreen from '../../screens/shared/OrderMessagePreviewScreen';
+
+export type OrderMessagePreviewParams = {
+  items: Array<{ title: string; quantity: number }>;
+  orderedAt: string;
+};
 
 export type HomeStackParamList = {
   Home: undefined;
   Pickups: undefined;
+  OrderMessagePreview: OrderMessagePreviewParams;
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -17,6 +24,11 @@ export default function HomeStack() {
       <Stack.Screen
         name="Pickups"
         component={PickupsScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="OrderMessagePreview"
+        component={OrderMessagePreviewScreen}
         options={{ animation: 'slide_from_right' }}
       />
     </Stack.Navigator>

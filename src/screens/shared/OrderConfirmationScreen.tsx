@@ -1,23 +1,35 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Pressable, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import OrderMessageCard from '../../components/order/OrderMessageCard';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { useOverlay } from '../../context/OverlayContext';
-import { getCurrentPickupSite } from '../../data/pickupSeason';
 import type { CartStackParamList } from '../../navigation/stacks/CartStack';
 import { navigateToShopTab } from '../../navigation/rootNavigation';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { buildOrderMessage } from '../../utils/orderMessage';
 
 type OrderConfirmationScreenProps = NativeStackScreenProps<CartStackParamList, 'OrderConfirmation'>;
 
-export default function OrderConfirmationScreen({ navigation }: OrderConfirmationScreenProps) {
+export default function OrderConfirmationScreen({ navigation, route }: OrderConfirmationScreenProps) {
+  const { colors } = useTheme();
   const { closeOverlay } = useOverlay();
-  const pickupSite = getCurrentPickupSite();
+  const { items, orderedAt } = route.params;
+
+  const message = useMemo(
+    () => buildOrderMessage(items, new Date(orderedAt)),
+    [items, orderedAt],
+  );
 
   return (
     <ScreenLayout showBack>
-      <View className="flex-1 px-4 pt-6">
+      <ScrollView
+        className="flex-1 px-4 pt-6"
+        contentContainerClassName="pb-8"
+        showsVerticalScrollIndicator={false}
+      >
         <View className="items-center">
           <View
             className="mb-5 h-20 w-20 items-center justify-center rounded-full"
@@ -27,31 +39,21 @@ export default function OrderConfirmationScreen({ navigation }: OrderConfirmatio
           </View>
 
           <Text
-            className="text-center text-2xl text-gray-900"
+            className="text-center text-2xl text-gray-900 dark:text-gray-100"
             style={{ fontFamily: 'Georgia' }}
           >
             Order confirmed
           </Text>
-          <Text className="mt-3 text-center text-base leading-6 text-gray-600">
-            Thanks for supporting Stooping Club. We&apos;ll see you at pickup.
+          <Text className="mt-3 text-center text-base leading-6 text-gray-600 dark:text-gray-400">
+            Your confirmation message is below. We also sent it as a notification.
           </Text>
         </View>
 
-        <View
-          className="mt-8 rounded-2xl border px-4 py-4"
-          style={{ borderColor: colors.border, backgroundColor: colors.background }}
-        >
-          <Text className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-            Pickup location
-          </Text>
-          <Text className="mt-2 text-lg font-semibold text-gray-900">{pickupSite.name}</Text>
-          <Text className="mt-1 text-sm text-gray-600">{pickupSite.address}</Text>
-          <Text className="mt-3 text-sm leading-5 text-gray-500">
-            Pickup is on Sunday. We&apos;ll send you a reminder that morning.
-          </Text>
+        <View className="mt-6">
+          <OrderMessageCard message={message} />
         </View>
 
-        <View className="mt-auto gap-3 pb-4">
+        <View className="mt-6 gap-3">
           <Pressable
             className="items-center rounded-xl py-4"
             style={{ backgroundColor: colors.brand }}
@@ -68,10 +70,10 @@ export default function OrderConfirmationScreen({ navigation }: OrderConfirmatio
             style={{ borderColor: colors.border, backgroundColor: colors.background }}
             onPress={() => navigation.navigate('Cart')}
           >
-            <Text className="text-base font-semibold text-gray-700">View cart</Text>
+            <Text className="text-base font-semibold text-gray-700 dark:text-gray-300">View cart</Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </ScreenLayout>
   );
 }

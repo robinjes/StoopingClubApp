@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 
 export type ShopMode = 'grid' | 'collections' | 'stroll';
 
@@ -24,6 +24,7 @@ type ShopModeSwitcherProps = {
 };
 
 export default function ShopModeSwitcher({ mode, onModeChange }: ShopModeSwitcherProps) {
+  const { colors } = useTheme();
   return (
     <View className="px-4 pb-3 pt-4">
       <View

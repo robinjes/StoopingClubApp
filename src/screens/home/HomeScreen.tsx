@@ -1,32 +1,61 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { ImageBackground, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 
-import CountUpNumber from '../../components/home/CountUpNumber';
 import FadeUp from '../../components/home/FadeUp';
+import ImpactStatsGrid from '../../components/home/ImpactStatsGrid';
+import ReviewCard from '../../components/home/ReviewCard';
 import ScreenLayout from '../../components/layout/ScreenLayout';
+import { useOverlay } from '../../context/OverlayContext';
+import { useTheme } from '../../context/ThemeContext';
+import { CUSTOMER_REVIEWS, IMPACT_STATS } from '../../data/homeContent';
+import { ORDER_MESSAGE_TEST_ITEMS } from '../../data/orderMessageTemplate';
 import type { HomeStackParamList } from '../../navigation/stacks/HomeStack';
 import type { TabParamList } from '../../navigation/TabNavigator';
-import { colors } from '../../theme/colors';
+import { sendTestOrderConfirmationMessage } from '../../services/notifications/orderConfirmation';
 
 type HomeNavigation = NativeStackNavigationProp<HomeStackParamList>;
 type TabNavigation = BottomTabNavigationProp<TabParamList>;
 
-const IMPACT_STATS = [
-  { target: 8500, suffix: '+', label: 'Preloved Items Diverted From Landfill' },
-  { target: 2300, suffix: '+', label: 'Orders Fulfilled' },
-  { target: 47, suffix: '', label: 'Tons of CO2 Emissions Prevented' },
-  { target: 19, suffix: '', label: 'Global Partnerships' },
-] as const;
-
 export default function HomeScreen() {
+  const { colors } = useTheme();
+  const { openOverlay } = useOverlay();
   const navigation = useNavigation<HomeNavigation>();
   const tabNavigation = useNavigation<TabNavigation>();
-  const { width } = useWindowDimensions();
-  const heroHeight = Math.max(300, width * 0.58);
   const [animationKey, setAnimationKey] = useState(0);
+  const [isTestingOrderMessage, setIsTestingOrderMessage] = useState(false);
+
+  async function handleTestOrderMessage() {
+    setIsTestingOrderMessage(true);
+
+    const items = ORDER_MESSAGE_TEST_ITEMS.map((item) => ({
+      title: item.title,
+      quantity: item.quantity,
+    }));
+    const orderedAt = new Date().toISOString();
+
+    const result = await sendTestOrderConfirmationMessage();
+
+    navigation.navigate('OrderMessagePreview', { items, orderedAt });
+
+    if (result.ok) {
+      Alert.alert('Test scheduled', 'A sample order confirmation will appear in about 1 second.');
+    } else {
+      Alert.alert('Could not send test', result.message);
+    }
+
+    setIsTestingOrderMessage(false);
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -37,77 +66,152 @@ export default function HomeScreen() {
   return (
     <ScreenLayout>
       <ScrollView
-        className="flex-1 bg-white"
-        contentContainerClassName="pb-10"
+        className="flex-1"
+        style={{ backgroundColor: colors.cream }}
+        contentContainerClassName="px-4 pb-10 pt-4"
         showsVerticalScrollIndicator={false}
       >
-        <ImageBackground
-          source={require('../../../assets/banner.png')}
-          style={{ width, height: heroHeight }}
-          resizeMode="cover"
-          accessibilityLabel="Stooping Club Oakland forest banner"
-        >
-          <View className="flex-1 items-center justify-center px-6">
-            <FadeUp animationKey={animationKey} delay={100}>
-              <Text className="text-center text-3xl font-bold text-white">
-                Stooping Club Oakland
-              </Text>
-            </FadeUp>
-
-            <FadeUp animationKey={animationKey} delay={300}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Shop now"
-                className="mt-6 rounded-full px-10 py-3.5"
-                style={{ backgroundColor: colors.brand }}
-                onPress={() => tabNavigation.navigate('ShopTab')}
-              >
-                <Text className="text-sm font-bold tracking-widest text-white">SHOP NOW</Text>
-              </Pressable>
-            </FadeUp>
-          </View>
-        </ImageBackground>
-
-        <View className="items-center px-6 pb-2 pt-10">
-          <FadeUp animationKey={animationKey} delay={450}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="View my pickups"
-              className="mb-8 rounded-full border px-6 py-3"
-              style={{ borderColor: colors.brand, backgroundColor: colors.cardActive }}
-              onPress={() => navigation.navigate('Pickups')}
+        <FadeUp animationKey={animationKey} delay={80}>
+          <View
+            className="rounded-3xl px-6 py-8"
+            style={{ backgroundColor: colors.brandDark }}
+          >
+            <View
+              className="mb-5 self-center rounded-full px-4 py-1.5"
+              style={{ backgroundColor: 'rgba(255,255,255,0.14)' }}
             >
-              <Text className="text-sm font-semibold" style={{ color: colors.brand }}>
-                My pickups & no-show status
+              <Text className="text-[10px] font-semibold tracking-[2px] text-white">
+                WORLD&apos;S FIRST FREE STORE
               </Text>
-            </Pressable>
+            </View>
 
             <Text
-              className="text-center text-2xl"
-              style={{ fontFamily: 'Georgia', color: colors.brand }}
+              className="text-center text-3xl leading-10 text-white"
+              style={{ fontFamily: 'Georgia' }}
             >
-              Our Impact at a Glance
+              Spend Less, Save Earth.
             </Text>
-          </FadeUp>
 
-          <View className="mt-8 w-full flex-row flex-wrap">
-            {IMPACT_STATS.map((stat, index) => (
-              <View key={stat.label} className="w-1/2 items-center px-3 py-5">
-                <CountUpNumber
-                  target={stat.target}
-                  suffix={stat.suffix}
-                  animationKey={animationKey}
-                  delay={600 + index * 120}
-                  className="text-3xl font-bold"
-                  style={{ color: colors.brand }}
-                />
-                <Text className="mt-2 text-center text-sm leading-5 text-gray-900">
-                  {stat.label}
-                </Text>
-              </View>
-            ))}
+            <Text className="mt-4 text-center text-base leading-6 text-white/85">
+              Oakland&apos;s completely free online community store — giving preloved household
+              items a second life and keeping them out of landfills.
+            </Text>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Browse free items"
+              className="mt-7 flex-row items-center justify-center self-center rounded-full px-8 py-3.5"
+              style={{ backgroundColor: colors.cream }}
+              onPress={() => tabNavigation.navigate('ShopTab')}
+            >
+              <Text className="text-sm font-semibold" style={{ color: colors.brandDark }}>
+                Browse Free Items
+              </Text>
+              <Ionicons
+                name="arrow-forward"
+                size={16}
+                color={colors.brandDark}
+                style={{ marginLeft: 8 }}
+              />
+            </Pressable>
           </View>
+        </FadeUp>
+
+        <FadeUp animationKey={animationKey} delay={180}>
+          <View className="mt-4">
+            <ImpactStatsGrid stats={IMPACT_STATS} colors={colors} animationKey={animationKey} />
+          </View>
+        </FadeUp>
+
+        <FadeUp animationKey={animationKey} delay={280}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="View my pickups"
+            className="mt-4 items-center rounded-full border px-5 py-3"
+            style={{ borderColor: colors.border, backgroundColor: colors.background }}
+            onPress={() => navigation.navigate('Pickups')}
+          >
+            <Text className="text-sm font-medium" style={{ color: colors.brand }}>
+              My pickups & no-show status
+            </Text>
+          </Pressable>
+        </FadeUp>
+
+        <FadeUp animationKey={animationKey} delay={360}>
+          <View
+            className="mt-8 rounded-2xl px-4 py-3"
+            style={{ backgroundColor: colors.brandDark }}
+          >
+            <Text
+              className="text-center text-lg text-white"
+              style={{ fontFamily: 'Georgia' }}
+            >
+              Customer Reviews
+            </Text>
+          </View>
+        </FadeUp>
+
+        <View className="mt-4">
+          {CUSTOMER_REVIEWS.map((review, index) => (
+            <FadeUp key={review.id} animationKey={animationKey} delay={420 + index * 80}>
+              <ReviewCard review={review} colors={colors} />
+            </FadeUp>
+          ))}
         </View>
+
+        <FadeUp animationKey={animationKey} delay={700}>
+          <View
+            className="rounded-3xl border px-6 py-8"
+            style={{ borderColor: colors.border, backgroundColor: colors.cardActive }}
+          >
+            <Text
+              className="text-center text-2xl leading-8"
+              style={{ fontFamily: 'Georgia', color: colors.text }}
+            >
+              Have something someone else could love?
+            </Text>
+
+            <Text className="mt-3 text-center text-base leading-6" style={{ color: colors.textMuted }}>
+              Donate preloved household items and keep them out of landfills. No fees. No hassle.
+              Just community.
+            </Text>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Donate items"
+              className="mt-6 flex-row items-center justify-center self-center rounded-full px-8 py-3.5"
+              style={{ backgroundColor: colors.brandDark }}
+              onPress={() => openOverlay('donate')}
+            >
+              <Text className="text-sm font-semibold text-white">Donate Items</Text>
+              <Ionicons name="arrow-forward" size={16} color="#FFFFFF" style={{ marginLeft: 8 }} />
+            </Pressable>
+          </View>
+        </FadeUp>
+
+        {__DEV__ ? (
+          <View className="mt-6 items-center">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Test order confirmation message"
+              className="rounded-full border px-5 py-3"
+              style={{ borderColor: colors.border, opacity: isTestingOrderMessage ? 0.6 : 1 }}
+              disabled={isTestingOrderMessage}
+              onPress={() => void handleTestOrderMessage()}
+            >
+              {isTestingOrderMessage ? (
+                <ActivityIndicator size="small" color={colors.brand} />
+              ) : (
+                <Text className="text-sm font-medium" style={{ color: colors.textMuted }}>
+                  Test order message
+                </Text>
+              )}
+            </Pressable>
+            <Text className="mt-2 text-center text-xs" style={{ color: colors.textMuted }}>
+              Dev only — preview confirmation message without placing an order
+            </Text>
+          </View>
+        ) : null}
       </ScrollView>
     </ScreenLayout>
   );

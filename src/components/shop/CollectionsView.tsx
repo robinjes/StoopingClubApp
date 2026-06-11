@@ -19,6 +19,7 @@ type CollectionsViewProps = {
   onProductPress?: (product: ShopifyProduct) => void;
   onAddToCart?: (product: ShopifyProduct) => void;
   addingProductId?: string | null;
+  emptyMessage?: string;
 };
 
 export default function CollectionsView({
@@ -27,6 +28,7 @@ export default function CollectionsView({
   onProductPress,
   onAddToCart,
   addingProductId = null,
+  emptyMessage,
 }: CollectionsViewProps) {
   const [filters, setFilters] = useState<CollectionFilters>({
     locationId: null,
@@ -100,6 +102,7 @@ export default function CollectionsView({
         onAddToCart={onAddToCart}
         addingProductId={addingProductId}
         onProductPress={onProductPress}
+        emptyMessage={emptyMessage}
       />
 
       <CollectionFilterSheet

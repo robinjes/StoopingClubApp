@@ -6,7 +6,7 @@ import {
   PICKUP_CONFIRMED_KEY,
 } from '../constants/noShow';
 import { customerAccountFetch } from '../services/shopify/customerApi';
-import type { CustomerOrder, CustomerProfile } from '../types/customer';
+import type { CustomerAddress, CustomerOrder, CustomerProfile } from '../types/customer';
 
 const LOCAL_PICKUP_CONFIRMATIONS_KEY = 'local_pickup_confirmations';
 
@@ -24,6 +24,17 @@ type CustomerOrdersResponse = {
     emailAddress: {
       emailAddress: string;
     } | null;
+    addresses: {
+      nodes: Array<{
+        id: string;
+        formatted: string[];
+        address1: string | null;
+        city: string | null;
+        provinceCode: string | null;
+        zip: string | null;
+        country: string | null;
+      }>;
+    };
     orders: {
       nodes: Array<{
         id: string;
@@ -67,6 +78,17 @@ const CUSTOMER_ORDERS_QUERY = `
       lastName
       emailAddress {
         emailAddress
+      }
+      addresses(first: 20) {
+        nodes {
+          id
+          formatted
+          address1
+          city
+          provinceCode
+          zip
+          country
+        }
       }
       orders(first: 25, sortKey: PROCESSED_AT, reverse: true) {
         nodes {
@@ -169,14 +191,18 @@ function mapOrderNode(node: OrderNode, localConfirmations: Record<string, string
 
 export async function fetchCustomerProfileAndOrders(
   accessToken: string,
-): Promise<{ profile: CustomerProfile | null; orders: CustomerOrder[] }> {
+): Promise<{
+  profile: CustomerProfile | null;
+  orders: CustomerOrder[];
+  addresses: CustomerAddress[];
+}> {
   const [data, localConfirmations] = await Promise.all([
     customerAccountFetch<CustomerOrdersResponse>(CUSTOMER_ORDERS_QUERY, accessToken),
     loadLocalPickupConfirmations(),
   ]);
 
   if (!data.customer) {
-    return { profile: null, orders: [] };
+    return { profile: null, orders: [], addresses: [] };
   }
 
   const profile: CustomerProfile = {
@@ -188,7 +214,17 @@ export async function fetchCustomerProfileAndOrders(
 
   const orders = data.customer.orders.nodes.map((node) => mapOrderNode(node, localConfirmations));
 
-  return { profile, orders };
+  const addresses: CustomerAddress[] = data.customer.addresses.nodes.map((node) => ({
+    id: node.id,
+    formatted: node.formatted.filter(Boolean).join(', '),
+    address1: node.address1,
+    city: node.city,
+    provinceCode: node.provinceCode,
+    zip: node.zip,
+    country: node.country,
+  }));
+
+  return { profile, orders, addresses };
 }
 
 export async function confirmOrderPickup(

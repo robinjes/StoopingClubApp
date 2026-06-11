@@ -6,14 +6,16 @@ import { WebView } from 'react-native-webview';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { useCart } from '../../context/CartContext';
 import type { CartStackParamList } from '../../navigation/stacks/CartStack';
-import { colors } from '../../theme/colors';
+import { sendOrderConfirmationMessage } from '../../services/notifications/orderConfirmation';
+import { useTheme } from '../../context/ThemeContext';
 import { isCheckoutCompleteUrl } from '../../utils/checkout';
 
 type CheckoutScreenProps = NativeStackScreenProps<CartStackParamList, 'Checkout'>;
 
 export default function CheckoutScreen({ navigation, route }: CheckoutScreenProps) {
+  const { colors } = useTheme();
   const { checkoutUrl } = route.params;
-  const { clearCart } = useCart();
+  const { cart, clearCart } = useCart();
   const [isLoading, setIsLoading] = useState(true);
   const hasCompletedRef = useRef(false);
 
@@ -23,15 +25,25 @@ export default function CheckoutScreen({ navigation, route }: CheckoutScreenProp
     }
 
     hasCompletedRef.current = true;
+
+    const items =
+      cart?.lines.map((line) => ({
+        title: line.title,
+        quantity: line.quantity,
+      })) ?? [];
+    const orderedAt = new Date().toISOString();
+
     await clearCart();
-    navigation.replace('OrderConfirmation');
+    void sendOrderConfirmationMessage(items, new Date(orderedAt));
+
+    navigation.replace('OrderConfirmation', { items, orderedAt });
   }
 
   return (
     <ScreenLayout showBack>
       <View className="flex-1">
         {isLoading ? (
-          <View className="absolute inset-0 z-10 items-center justify-center bg-white">
+          <View className="absolute inset-0 z-10 items-center justify-center bg-white dark:bg-gray-950">
             <ActivityIndicator size="large" color={colors.brand} />
           </View>
         ) : null}

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 
 export type ShopSortOption = 'latest' | 'title' | 'price-asc' | 'price-desc';
 
@@ -29,6 +29,7 @@ export default function ShopToolbar({
   onSortChange,
   onStrollPress,
 }: ShopToolbarProps) {
+  const { colors } = useTheme();
   const start = totalCount === 0 ? 0 : 1;
   const end = visibleCount;
 
@@ -39,11 +40,11 @@ export default function ShopToolbar({
   }
 
   return (
-    <View className="border-b border-gray-100 bg-white px-4 py-4">
-      <Text className="text-xs text-gray-500">Home / Shop</Text>
+    <View className="border-b border-gray-100 bg-white dark:bg-gray-950 px-4 py-4">
+      <Text className="text-xs text-gray-500 dark:text-gray-400">Home / Shop</Text>
 
       <View className="mt-3 flex-row items-center justify-between gap-3">
-        <Text className="flex-1 text-sm text-gray-600">
+        <Text className="flex-1 text-sm text-gray-600 dark:text-gray-400">
           Showing {start}–{end} of {totalCount} results
         </Text>
 
@@ -51,7 +52,7 @@ export default function ShopToolbar({
           {onStrollPress ? (
             <Pressable
               onPress={onStrollPress}
-              className="rounded-lg border border-gray-200 px-3 py-2"
+              className="rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2"
             >
               <Ionicons name="shuffle-outline" size={16} color={colors.brand} />
             </Pressable>
@@ -59,9 +60,9 @@ export default function ShopToolbar({
 
           <Pressable
             onPress={cycleSort}
-            className="max-w-[160px] flex-row items-center gap-1 rounded-lg border border-gray-200 px-3 py-2"
+            className="max-w-[160px] flex-row items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2"
           >
-            <Text className="flex-1 text-xs text-gray-700" numberOfLines={1}>
+            <Text className="flex-1 text-xs text-gray-700 dark:text-gray-300" numberOfLines={1}>
               {SORT_LABELS[sort]}
             </Text>
             <Ionicons name="chevron-down" size={14} color={colors.textMuted} />

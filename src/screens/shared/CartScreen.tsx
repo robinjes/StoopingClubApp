@@ -9,12 +9,13 @@ import { useOverlay } from '../../context/OverlayContext';
 import type { CartStackParamList } from '../../navigation/stacks/CartStack';
 import { navigateToShopTab } from '../../navigation/rootNavigation';
 import { isShopifyConfigured } from '../../services/shopify';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { formatPrice } from '../../utils/formatPrice';
 
 type CartNavigation = NativeStackNavigationProp<CartStackParamList>;
 
 export default function CartScreen() {
+  const { colors } = useTheme();
   const cartNavigation = useNavigation<CartNavigation>();
   const { closeOverlay } = useOverlay();
   const {
@@ -67,8 +68,8 @@ export default function CartScreen() {
 
         {!isLoading && itemCount === 0 ? (
           <View className="mt-8 items-center">
-            <Text className="text-base text-gray-600">Your cart is empty.</Text>
-            <Text className="mt-2 text-center text-sm text-gray-500">
+            <Text className="text-base text-gray-600 dark:text-gray-400">Your cart is empty.</Text>
+            <Text className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
               Browse the shop and tap Add on any item.
             </Text>
             <Pressable
@@ -89,16 +90,16 @@ export default function CartScreen() {
             {cart?.lines.map((line) => (
               <View
                 key={line.id}
-                className="mb-3 flex-row items-center rounded-2xl border border-gray-200 bg-white p-3"
+                className="mb-3 flex-row items-center rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-3"
               >
-                <View className="h-16 w-16 overflow-hidden rounded-xl bg-gray-100">
+                <View className="h-16 w-16 overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
                   {line.imageUrl ? (
                     <Image source={{ uri: line.imageUrl }} className="h-full w-full" />
                   ) : null}
                 </View>
 
                 <View className="ml-3 flex-1">
-                  <Text className="font-medium text-gray-900" numberOfLines={2}>
+                  <Text className="font-medium text-gray-900 dark:text-gray-100" numberOfLines={2}>
                     {line.title}
                   </Text>
                   <Text className="mt-1 text-sm font-semibold" style={{ color: colors.brand }}>
@@ -107,19 +108,19 @@ export default function CartScreen() {
 
                   <View className="mt-2 flex-row items-center gap-3">
                     <Pressable
-                      className="h-8 w-8 items-center justify-center rounded-full border border-gray-200"
+                      className="h-8 w-8 items-center justify-center rounded-full border border-gray-200 dark:border-gray-800"
                       onPress={() => void updateItem(line.id, Math.max(1, line.quantity - 1))}
                     >
-                      <Text className="text-base text-gray-700">−</Text>
+                      <Text className="text-base text-gray-700 dark:text-gray-300">−</Text>
                     </Pressable>
                     <Text className="min-w-[20px] text-center text-sm font-medium">
                       {line.quantity}
                     </Text>
                     <Pressable
-                      className="h-8 w-8 items-center justify-center rounded-full border border-gray-200"
+                      className="h-8 w-8 items-center justify-center rounded-full border border-gray-200 dark:border-gray-800"
                       onPress={() => void updateItem(line.id, line.quantity + 1)}
                     >
-                      <Text className="text-base text-gray-700">+</Text>
+                      <Text className="text-base text-gray-700 dark:text-gray-300">+</Text>
                     </Pressable>
                     <Pressable className="ml-auto" onPress={() => void removeItem(line.id)}>
                       <Text className="text-sm text-red-600">Remove</Text>
@@ -129,7 +130,7 @@ export default function CartScreen() {
               </View>
             ))}
 
-            <View className="mt-auto border-t border-gray-200 pt-4">
+            <View className="mt-auto border-t border-gray-200 dark:border-gray-800 pt-4">
               {checkoutRestricted ? (
                 <View className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
                   <Text className="text-sm font-semibold text-red-800">Checkout paused</Text>
@@ -141,8 +142,8 @@ export default function CartScreen() {
               ) : null}
 
               <View className="mb-4 flex-row items-center justify-between">
-                <Text className="text-base text-gray-600">Subtotal</Text>
-                <Text className="text-lg font-semibold text-gray-900">
+                <Text className="text-base text-gray-600 dark:text-gray-400">Subtotal</Text>
+                <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {formatPrice(cart?.subtotal ?? { amount: '0', currencyCode: 'USD' })}
                 </Text>
               </View>

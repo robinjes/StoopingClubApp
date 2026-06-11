@@ -4,10 +4,15 @@ import CartScreen from '../../screens/shared/CartScreen';
 import CheckoutScreen from '../../screens/shared/CheckoutScreen';
 import OrderConfirmationScreen from '../../screens/shared/OrderConfirmationScreen';
 
+export type OrderConfirmationParams = {
+  items: Array<{ title: string; quantity: number }>;
+  orderedAt: string;
+};
+
 export type CartStackParamList = {
   Cart: undefined;
   Checkout: { checkoutUrl: string };
-  OrderConfirmation: undefined;
+  OrderConfirmation: OrderConfirmationParams;
 };
 
 const Stack = createNativeStackNavigator<CartStackParamList>();

@@ -51,7 +51,7 @@ export default function ShopCatalogView({
 
   const sidebar = (
     <View
-      className="bg-white p-4"
+      className="bg-white dark:bg-gray-950 p-4"
       style={{
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
@@ -60,7 +60,7 @@ export default function ShopCatalogView({
         elevation: 2,
       }}
     >
-      <Text className="mb-3 text-sm font-medium text-gray-900">Search</Text>
+      <Text className="mb-3 text-sm font-medium text-gray-900 dark:text-gray-100">Search</Text>
       <ShopSearchBar value={searchQuery} onChangeText={setSearchQuery} />
       <View className="mt-5">
         <CategoryList
@@ -85,7 +85,7 @@ export default function ShopCatalogView({
         onStrollPress={onStrollPress}
       />
       {filteredProducts.length === 0 ? (
-        <Text className="px-4 py-8 text-center text-sm text-gray-500">
+        <Text className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
           No products match your search or category.
         </Text>
       ) : null}
@@ -95,7 +95,7 @@ export default function ShopCatalogView({
   if (isWideLayout) {
     return (
       <View className="flex-1 flex-row">
-        <View style={{ width: 300 }} className="border-r border-gray-100 bg-white">
+        <View style={{ width: 300 }} className="border-r border-gray-100 bg-white dark:bg-gray-950">
           {sidebar}
         </View>
         <View className="flex-1">

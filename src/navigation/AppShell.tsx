@@ -3,15 +3,17 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useOverlay } from '../context/OverlayContext';
+import { useTheme } from '../context/ThemeContext';
 import ContactScreen from '../screens/shared/ContactScreen';
 import DonateScreen from '../screens/shared/DonateScreen';
+import { TAB_BAR_HEIGHT } from './constants';
+import AccountStack from './stacks/AccountStack';
 import CartStack from './stacks/CartStack';
 import TabNavigator from './TabNavigator';
 
-const TAB_BAR_HEIGHT = 56;
-
 export default function AppShell() {
   const { overlay } = useOverlay();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const tabBarOffset = TAB_BAR_HEIGHT + insets.bottom;
 
@@ -20,7 +22,7 @@ export default function AppShell() {
       <TabNavigator />
 
       {overlay ? (
-        <View style={[styles.overlay, { bottom: tabBarOffset }]}>
+        <View style={[styles.overlay, { bottom: tabBarOffset, backgroundColor: colors.background }]}>
           {overlay === 'cart' ? (
             <NavigationIndependentTree>
               <NavigationContainer>
@@ -30,6 +32,13 @@ export default function AppShell() {
           ) : null}
           {overlay === 'donate' ? <DonateScreen /> : null}
           {overlay === 'contact' ? <ContactScreen /> : null}
+          {overlay === 'account' ? (
+            <NavigationIndependentTree>
+              <NavigationContainer>
+                <AccountStack />
+              </NavigationContainer>
+            </NavigationIndependentTree>
+          ) : null}
         </View>
       ) : null}
     </View>
@@ -42,6 +51,5 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FFFFFF',
   },
 });

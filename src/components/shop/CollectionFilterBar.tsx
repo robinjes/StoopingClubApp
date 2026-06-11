@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import type { CollectionFilters } from './CollectionFilterSheet';
 import { getFilterSummary } from './CollectionFilterSheet';
 
@@ -16,12 +16,13 @@ export default function CollectionFilterBar({
   activeCount,
   onPress,
 }: CollectionFilterBarProps) {
+  const { colors } = useTheme();
   const hasActiveFilters = activeCount > 0;
 
   return (
     <Pressable
       onPress={onPress}
-      className="mb-4 rounded-2xl border bg-white px-4 py-3.5"
+      className="mb-4 rounded-2xl border bg-white dark:bg-gray-950 px-4 py-3.5"
       style={{
         borderColor: hasActiveFilters ? colors.brand : colors.border,
         backgroundColor: hasActiveFilters ? colors.cardActive : colors.background,
@@ -41,8 +42,8 @@ export default function CollectionFilterBar({
           </View>
 
           <View className="min-w-0 flex-1">
-            <Text className="text-base font-semibold text-gray-900">Filter collections</Text>
-            <Text className="mt-0.5 text-sm text-gray-500" numberOfLines={1}>
+            <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">Filter collections</Text>
+            <Text className="mt-0.5 text-sm text-gray-500 dark:text-gray-400" numberOfLines={1}>
               {getFilterSummary(filters)}
             </Text>
           </View>

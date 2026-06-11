@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
 import type { ShopifyCollection, ShopifyProduct } from '../../types/shopify';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import {
   getCategoryProductCount,
   getChildCategories,
@@ -27,6 +27,8 @@ type CategoryRowProps = {
 };
 
 function CategoryRow({ label, count, selected, indented = false, onPress }: CategoryRowProps) {
+  const { colors } = useTheme();
+
   return (
     <Pressable
       onPress={onPress}
@@ -47,7 +49,7 @@ function CategoryRow({ label, count, selected, indented = false, onPress }: Cate
           {label}
         </Text>
       </View>
-      <Text className="text-sm text-gray-500">({count})</Text>
+      <Text className="text-sm text-gray-500 dark:text-gray-400">({count})</Text>
     </Pressable>
   );
 }
@@ -117,6 +119,7 @@ export default function CategoryList({
   recentProductIds,
   onSelect,
 }: CategoryListProps) {
+  const { colors } = useTheme();
   const recentCategory = getRecentCategory();
   const recentCount = getCategoryProductCount(
     products,
@@ -128,7 +131,7 @@ export default function CategoryList({
   return (
     <View>
       <Text
-        className="mb-3 text-base text-gray-900"
+        className="mb-3 text-base text-gray-900 dark:text-gray-100"
         style={{ fontFamily: 'Georgia' }}
       >
         Categories

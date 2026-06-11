@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import { Animated, Dimensions, Image, StyleSheet } from 'react-native';
 
-import { colors } from '../../theme/colors';
+import { lightColors } from '../../theme/colors';
 
 const FADE_IN_MS = 500;
 const HOLD_MS = 1500;
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.cream,
+    backgroundColor: lightColors.cream,
   },
   logo: {
     width: LOGO_WIDTH,

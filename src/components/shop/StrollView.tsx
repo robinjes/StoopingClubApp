@@ -12,7 +12,7 @@ import {
 
 import { useWishlist } from '../../hooks/useWishlist';
 import type { ShopifyProduct } from '../../types/shopify';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { formatPrice } from '../../utils/formatPrice';
 import { getOriginStory } from '../../utils/productText';
 
@@ -21,6 +21,7 @@ type StrollViewProps = {
   onProductPress?: (product: ShopifyProduct) => void;
   onAddToCart?: (product: ShopifyProduct) => void;
   addingProductId?: string | null;
+  emptyMessage?: string;
 };
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -42,14 +43,18 @@ export default function StrollView({
   onProductPress,
   onAddToCart,
   addingProductId = null,
+  emptyMessage,
 }: StrollViewProps) {
+  const { colors } = useTheme();
   const { isWishlisted, toggle } = useWishlist();
   const strollProducts = useMemo(() => shuffleProducts(products), [products]);
 
   if (strollProducts.length === 0) {
     return (
       <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-center text-sm text-gray-500">No items to stroll through yet.</Text>
+        <Text className="text-center text-sm text-gray-500 dark:text-gray-400">
+          {emptyMessage ?? 'No items to stroll through yet.'}
+        </Text>
       </View>
     );
   }
@@ -73,10 +78,10 @@ export default function StrollView({
         return (
           <View style={{ height: STROLL_HEIGHT }} className="px-4 pb-4">
             <Pressable
-              className="flex-1 overflow-hidden rounded-3xl border border-gray-100 bg-white"
+              className="flex-1 overflow-hidden rounded-3xl border border-gray-100 bg-white dark:bg-gray-950"
               onPress={() => onProductPress?.(item)}
             >
-              <View className="relative flex-1 bg-gray-100">
+              <View className="relative flex-1 bg-gray-100 dark:bg-gray-800">
                 {imageUrl ? (
                   <Image source={{ uri: imageUrl }} className="h-full w-full" resizeMode="cover" />
                 ) : (
@@ -88,7 +93,7 @@ export default function StrollView({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={wished ? 'Remove from wishlist' : 'Add to wishlist'}
-                  className="absolute right-3 top-3 h-9 w-9 items-center justify-center rounded-full bg-white/95"
+                  className="absolute right-3 top-3 h-9 w-9 items-center justify-center rounded-full bg-white dark:bg-gray-950/95"
                   style={{
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 1 },
@@ -116,7 +121,7 @@ export default function StrollView({
                 >
                   {item.title}
                 </Text>
-                <Text className="mt-2 text-sm leading-5 text-gray-600">
+                <Text className="mt-2 text-sm leading-5 text-gray-600 dark:text-gray-400">
                   {getOriginStory(item.description)}
                 </Text>
                 <View className="mt-3 flex-row items-center justify-between">

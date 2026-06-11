@@ -15,6 +15,16 @@ export type CustomerOrder = {
   pickupConfirmedAt: string | null;
 };
 
+export type CustomerAddress = {
+  id: string;
+  formatted: string;
+  address1: string | null;
+  city: string | null;
+  provinceCode: string | null;
+  zip: string | null;
+  country: string | null;
+};
+
 export type CustomerProfile = {
   id: string;
   email: string | null;

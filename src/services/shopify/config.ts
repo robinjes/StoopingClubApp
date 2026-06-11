@@ -5,6 +5,7 @@
 export const shopifyConfig = {
   storeDomain:
     process.env.EXPO_PUBLIC_SHOPIFY_STORE_DOMAIN ?? 'stooping-club-berkeley.myshopify.com',
+  shopId: process.env.EXPO_PUBLIC_SHOPIFY_SHOP_ID ?? '74832183474',
   storefrontAccessToken: process.env.EXPO_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN ?? '',
   apiVersion: process.env.EXPO_PUBLIC_SHOPIFY_API_VERSION ?? '2024-10',
   customerAccountClientId: process.env.EXPO_PUBLIC_SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID ?? '',

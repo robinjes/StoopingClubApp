@@ -3,7 +3,7 @@ import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 
 import { useWishlist } from '../../hooks/useWishlist';
 import type { ShopifyProduct } from '../../types/shopify';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../context/ThemeContext';
 import { formatPrice } from '../../utils/formatPrice';
 
 type ProductCardProps = {
@@ -19,6 +19,7 @@ export default function ProductCard({
   onAddToCart,
   isAdding = false,
 }: ProductCardProps) {
+  const { colors } = useTheme();
   const imageUrl = product.images[0]?.url;
   const canAdd = Boolean(onAddToCart);
   const { isWishlisted, toggle } = useWishlist();
@@ -26,10 +27,10 @@ export default function ProductCard({
 
   return (
     <Pressable
-      className="overflow-hidden rounded-2xl border border-gray-100 bg-white"
+      className="overflow-hidden rounded-2xl border border-gray-100 bg-white dark:bg-gray-950"
       onPress={() => onPress?.(product)}
     >
-      <View className="aspect-square w-full bg-gray-100">
+      <View className="aspect-square w-full bg-gray-100 dark:bg-gray-800">
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} className="h-full w-full" resizeMode="cover" />
         ) : (
@@ -41,7 +42,7 @@ export default function ProductCard({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={wished ? 'Remove from wishlist' : 'Add to wishlist'}
-          className="absolute right-2 top-2 h-8 w-8 items-center justify-center rounded-full bg-white/90"
+          className="absolute right-2 top-2 h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-gray-950/90"
           onPress={(event) => {
             event.stopPropagation();
             void toggle(product.id);
@@ -56,7 +57,7 @@ export default function ProductCard({
       </View>
 
       <View className="p-3">
-        <Text className="text-sm font-medium leading-5 text-gray-900" numberOfLines={2}>
+        <Text className="text-sm font-medium leading-5 text-gray-900 dark:text-gray-100" numberOfLines={2}>
           {product.title}
         </Text>
         <View className="mt-2 flex-row items-center justify-between gap-2">

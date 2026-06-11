@@ -11,11 +11,11 @@ import {
 import { confirmOrderPickup, fetchCustomerProfileAndOrders } from '../api/customerOrders';
 import { isCustomerAccountConfigured } from '../services/shopify/config';
 import {
+  completeCustomerLogin,
   getValidCustomerAccessToken,
-  loginCustomer,
   logoutCustomer,
 } from '../services/shopify/customerAuth';
-import type { CustomerOrder, CustomerProfile } from '../types/customer';
+import type { CustomerAddress, CustomerOrder, CustomerProfile } from '../types/customer';
 import { countNoShows, isCheckoutRestricted } from '../utils/noShow';
 
 type CustomerContextValue = {
@@ -24,11 +24,12 @@ type CustomerContextValue = {
   isLoading: boolean;
   isRefreshingOrders: boolean;
   profile: CustomerProfile | null;
+  addresses: CustomerAddress[];
   orders: CustomerOrder[];
   noShowCount: number;
   checkoutRestricted: boolean;
   error: string | null;
-  login: () => Promise<void>;
+  completeLogin: (code: string, codeVerifier: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshOrders: () => Promise<void>;
   confirmPickup: (orderId: string) => Promise<void>;
@@ -39,6 +40,7 @@ const CustomerContext = createContext<CustomerContextValue | null>(null);
 
 export function CustomerProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
+  const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingOrders, setIsRefreshingOrders] = useState(false);
@@ -50,6 +52,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const refreshOrders = useCallback(async () => {
     if (!isConfigured) {
       setProfile(null);
+      setAddresses([]);
       setOrders([]);
       setIsAuthenticated(false);
       return;
@@ -62,6 +65,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       const accessToken = await getValidCustomerAccessToken();
       if (!accessToken) {
         setProfile(null);
+        setAddresses([]);
         setOrders([]);
         setIsAuthenticated(false);
         return;
@@ -69,12 +73,14 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
       const result = await fetchCustomerProfileAndOrders(accessToken);
       setProfile(result.profile);
+      setAddresses(result.addresses);
       setOrders(result.orders);
       setIsAuthenticated(Boolean(result.profile));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not load your orders.';
       setError(message);
       setProfile(null);
+      setAddresses([]);
       setOrders([]);
       setIsAuthenticated(false);
     } finally {
@@ -92,21 +98,24 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     void bootstrap();
   }, [refreshOrders]);
 
-  const login = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const completeLogin = useCallback(
+    async (code: string, codeVerifier: string) => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      await loginCustomer();
-      await refreshOrders();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not sign in.';
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [refreshOrders]);
+      try {
+        await completeCustomerLogin(code, codeVerifier);
+        await refreshOrders();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Could not sign in.';
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [refreshOrders],
+  );
 
   const logout = useCallback(async () => {
     setIsLoading(true);
@@ -115,6 +124,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     try {
       await logoutCustomer();
       setProfile(null);
+      setAddresses([]);
       setOrders([]);
       setIsAuthenticated(false);
     } finally {
@@ -158,11 +168,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       isLoading,
       isRefreshingOrders,
       profile,
+      addresses,
       orders,
       noShowCount,
       checkoutRestricted,
       error,
-      login,
+      completeLogin,
       logout,
       refreshOrders,
       confirmPickup,
@@ -174,11 +185,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       isLoading,
       isRefreshingOrders,
       profile,
+      addresses,
       orders,
       noShowCount,
       checkoutRestricted,
       error,
-      login,
+      completeLogin,
       logout,
       refreshOrders,
       confirmPickup,
