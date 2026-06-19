@@ -92,7 +92,8 @@
           "color": "#3B6D11"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font"
     ],
     "extra": {
       "eas": {
