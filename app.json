@@ -2,13 +2,16 @@
   "expo": {
     "name": "StoopingClubApp",
     "slug": "StoopingClubApp",
-    "scheme": ["stoopingclubapp", "shop.74832183474.app"],
+    "scheme": [
+      "stoopingclubapp",
+      "shop.74832183474.app"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/android-icon-foreground.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/stoopingclublogo.png",
+      "image": "./assets/stoopylogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#F7F4EE"
     },
@@ -19,12 +22,15 @@
         "NSUserNotificationsUsageDescription": "Stooping Club sends Friday order reminders and Sunday pickup reminders.",
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["stoopingclubapp", "shop.74832183474.app"]
+            "CFBundleURLSchemes": [
+              "stoopingclubapp",
+              "shop.74832183474.app"
+            ]
           }
         ]
       },
       "splash": {
-        "image": "./assets/stoopingclublogo.png",
+        "image": "./assets/stoopylogo.png",
         "resizeMode": "contain",
         "backgroundColor": "#F7F4EE"
       }
@@ -38,7 +44,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "splash": {
-        "image": "./assets/stoopingclublogo.png",
+        "image": "./assets/stoopylogo.png",
         "resizeMode": "contain",
         "backgroundColor": "#F7F4EE"
       },
@@ -59,18 +65,21 @@
               "pathPrefix": "/callback"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/stoopylogo.png"
     },
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "image": "./assets/stoopingclublogo.png",
+          "image": "./assets/stoopylogo.png",
           "resizeMode": "contain",
           "backgroundColor": "#F7F4EE",
           "imageWidth": 300
@@ -79,11 +88,17 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/android-icon-monochrome.png",
           "color": "#3B6D11"
         }
       ],
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "26fd3245-e0c3-4063-b3a4-c4270e25f705"
+      }
+    },
+    "owner": "robbd"
   }
 }
