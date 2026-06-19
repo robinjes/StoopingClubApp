@@ -1,13 +1,13 @@
 export const ABOUT_TAGLINE = 'Spend Less, Save Earth™';
 
 export const ABOUT_DESCRIPTION =
-  'Stooping Club℠ is the world\u2019s first free online chain store. We offer new and gently used household items, all for free!';
+  'Stooping Club is the world\u2019s first free online chain store. We offer new and preloved household items at no cost to promote sustainability and community sharing.';
 
 export const ABOUT_VISION =
-  'To transform society\u2019s throwaway culture into a reuse culture and build a circular economy';
+  'To transform society\u2019s throwaway culture into a reuse culture and build a circular economy.';
 
 export const ABOUT_MISSION =
-  'To divert useful items from landfill, inspire communities to embrace reuse and empower youth in sustainable entrepreneurship';
+  'To give useful items a second life by making reuse free and accessible for everyone.';
 
 export const ABOUT_STORY_SUBTITLE = 'From a high school club to a global community';
 
@@ -27,11 +27,18 @@ export const ABOUT_MILESTONES: AboutMilestone[] = [
       'We originally started as a club at The College Preparatory School in Oakland, California, with the goal of promoting reuse and fighting consumerism.',
   },
   {
+    id: 'first-branch',
+    date: 'October 20, 2023',
+    title: 'Our First Branch',
+    description:
+      'We launch the world\u2019s first free online store. Stooping Club helps people save money, reduce landfill waste, and live more sustainably through our one-stop shop.',
+  },
+  {
     id: 'first-store',
     date: 'October 20, 2023',
     title: 'Our First Free Online Store',
     description:
-      'We launch the world\u2019s first free online store. Stooping Club helps people save money, reduce landfill waste, and live more sustainably through our one-stop shop.',
+      'We launch the world\u2019s first free online store. Stooping Club helps people save money and reduce landfill waste through our one-stop shop.',
   },
   {
     id: 'cougar-cages',
@@ -66,7 +73,7 @@ export const ABOUT_MILESTONES: AboutMilestone[] = [
     date: 'July 22, 2024',
     title: 'Endorsed by Stooping NYC',
     description:
-      'Stooping NYC, the founders of the stooping movement, spotlights Stooping Club, recognizing our work to promote sustainability and community reuse.',
+      'Stooping NYC, the founders of the stooping movement spotlights Stooping Club, recognizing our work to promote sustainability and community reuse.',
   },
   {
     id: 'milpitas',

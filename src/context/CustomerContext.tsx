@@ -9,9 +9,9 @@ import {
 } from 'react';
 
 import { confirmOrderPickup, fetchCustomerProfileAndOrders } from '../api/customerOrders';
-import { isCustomerAccountConfigured } from '../services/shopify/config';
 import {
   completeCustomerLogin,
+  getCustomerAuthStatus,
   getValidCustomerAccessToken,
   logoutCustomer,
 } from '../services/shopify/customerAuth';
@@ -29,9 +29,10 @@ type CustomerContextValue = {
   noShowCount: number;
   checkoutRestricted: boolean;
   error: string | null;
-  completeLogin: (code: string, codeVerifier: string) => Promise<void>;
+  finishLogin: (code: string, codeVerifier: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshOrders: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   confirmPickup: (orderId: string) => Promise<void>;
   clearError: () => void;
 };
@@ -47,7 +48,20 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const isConfigured = isCustomerAccountConfigured();
+  const isConfigured = getCustomerAuthStatus().configured;
+
+  const refreshProfile = useCallback(async () => {
+    const accessToken = await getValidCustomerAccessToken();
+    if (!accessToken) {
+      setProfile(null);
+      setIsAuthenticated(false);
+      return;
+    }
+
+    const ordersResult = await fetchCustomerProfileAndOrders(accessToken);
+    setProfile(ordersResult.profile);
+    setIsAuthenticated(Boolean(ordersResult.profile?.id));
+  }, []);
 
   const refreshOrders = useCallback(async () => {
     if (!isConfigured) {
@@ -71,13 +85,14 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const result = await fetchCustomerProfileAndOrders(accessToken);
-      setProfile(result.profile);
-      setAddresses(result.addresses);
-      setOrders(result.orders);
-      setIsAuthenticated(Boolean(result.profile));
+      const ordersResult = await fetchCustomerProfileAndOrders(accessToken);
+
+      setProfile(ordersResult.profile);
+      setAddresses(ordersResult.addresses);
+      setOrders(ordersResult.orders);
+      setIsAuthenticated(Boolean(ordersResult.profile?.id));
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not load your orders.';
+      const message = err instanceof Error ? err.message : 'Could not load your account.';
       setError(message);
       setProfile(null);
       setAddresses([]);
@@ -98,7 +113,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     void bootstrap();
   }, [refreshOrders]);
 
-  const completeLogin = useCallback(
+  const finishLogin = useCallback(
     async (code: string, codeVerifier: string) => {
       setIsLoading(true);
       setError(null);
@@ -173,9 +188,10 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       noShowCount,
       checkoutRestricted,
       error,
-      completeLogin,
+      finishLogin,
       logout,
       refreshOrders,
+      refreshProfile,
       confirmPickup,
       clearError,
     }),
@@ -190,9 +206,10 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       noShowCount,
       checkoutRestricted,
       error,
-      completeLogin,
+      finishLogin,
       logout,
       refreshOrders,
+      refreshProfile,
       confirmPickup,
       clearError,
     ],

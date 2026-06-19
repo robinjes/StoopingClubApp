@@ -9,12 +9,7 @@ import {
 
 export type OverlayScreen = 'cart' | 'donate' | 'contact' | 'account';
 
-export type AccountRoute =
-  | 'SignInShop'
-  | 'SignInEmail'
-  | 'CustomerSignIn'
-  | 'Orders'
-  | 'Profile';
+export type AccountRoute = 'SignInShop' | 'Orders' | 'Profile';
 
 type OverlayContextValue = {
   overlay: OverlayScreen | null;

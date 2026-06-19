@@ -1,4 +1,5 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import type { NavigatorScreenParams } from '@react-navigation/native';
 
 import EmptyTabScreen from '../screens/shared/EmptyTabScreen';
 import { useOverlay } from '../context/OverlayContext';
@@ -6,20 +7,16 @@ import { useTheme } from '../context/ThemeContext';
 import { useWishlist } from '../hooks/useWishlist';
 import ScrollableTabBar from './ScrollableTabBar';
 import AboutStack from './stacks/AboutStack';
-import EventsStack from './stacks/EventsStack';
-import HomeStack from './stacks/HomeStack';
+import HomeStack, { type HomeStackParamList } from './stacks/HomeStack';
 import InvolvedStack from './stacks/InvolvedStack';
-import ResourcesStack from './stacks/ResourcesStack';
-import ShopStack from './stacks/ShopStack';
+import ShopStack, { type ShopStackParamList } from './stacks/ShopStack';
 import WishlistStack from './stacks/WishlistStack';
 
 export type TabParamList = {
-  HomeTab: undefined;
-  ShopTab: undefined;
+  HomeTab: NavigatorScreenParams<HomeStackParamList> | undefined;
+  ShopTab: NavigatorScreenParams<ShopStackParamList> | undefined;
   WishlistTab: undefined;
   DonateTab: undefined;
-  EventsTab: undefined;
-  ResourcesTab: undefined;
   AboutTab: undefined;
   GetInvolvedTab: undefined;
 };
@@ -69,8 +66,6 @@ export default function TabNavigator() {
           },
         }}
       />
-      <Tab.Screen name="EventsTab" component={EventsStack} options={{ title: 'Events' }} />
-      <Tab.Screen name="ResourcesTab" component={ResourcesStack} options={{ title: 'Resources' }} />
       <Tab.Screen name="AboutTab" component={AboutStack} options={{ title: 'About Us' }} />
       <Tab.Screen
         name="GetInvolvedTab"

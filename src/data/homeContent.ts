@@ -1,3 +1,5 @@
+import type { ImageSourcePropType } from 'react-native';
+
 export type ImpactStat = {
   id: string;
   label: string;
@@ -6,14 +8,9 @@ export type ImpactStat = {
   prefix?: string;
 };
 
-/** Template reviews — swap copy and names when real testimonials are ready */
-export type CustomerReview = {
+export type HappyCustomerPhoto = {
   id: string;
-  initials: string;
-  name: string;
-  role: string;
-  rating: number;
-  quote: string;
+  source: ImageSourcePropType;
 };
 
 export const IMPACT_STATS: ImpactStat[] = [
@@ -42,32 +39,17 @@ export const IMPACT_STATS: ImpactStat[] = [
   },
 ];
 
-export const CUSTOMER_REVIEWS: CustomerReview[] = [
+export const HAPPY_CUSTOMER_PHOTOS: HappyCustomerPhoto[] = [
   {
-    id: 'maria',
-    initials: 'MT',
-    name: 'Maria T.',
-    role: 'Teacher, Oakland',
-    rating: 5,
-    quote:
-      'I furnished my whole classroom with free items from Stooping Club. My students love it, and nothing went to landfill.',
+    id: 'happy-customer-1',
+    source: require('../../assets/happy-customer-1.png'),
   },
   {
-    id: 'james',
-    initials: 'JR',
-    name: 'James R.',
-    role: 'Student, Berkeley',
-    rating: 5,
-    quote:
-      'Moved into my first apartment with almost nothing. Stooping Club had everything I needed — couch, dishes, lamps — all free.',
+    id: 'happy-customer-2',
+    source: require('../../assets/happy-customer-2.png'),
   },
   {
-    id: 'priya',
-    initials: 'PS',
-    name: 'Priya S.',
-    role: 'Donor, Oakland',
-    rating: 5,
-    quote:
-      "I donated a whole apartment's worth of items when I moved. Knowing they went to real people in my neighborhood instead of a landfill means everything.",
+    id: 'happy-customer-3',
+    source: require('../../assets/happy-customer-3.png'),
   },
 ];

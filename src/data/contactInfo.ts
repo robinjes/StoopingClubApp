@@ -1,16 +1,16 @@
-export const CONTACT_EMAIL = 'oaklandstooping@gmail.com';
+export const CONTACT_EMAIL = 'admin@berkeleystooping.org';
 
 export const SOCIAL_LINKS = [
   {
     id: 'youtube',
     label: 'YouTube',
-    url: 'https://www.youtube.com/@StoopingClubOakland',
+    url: 'https://www.youtube.com/@StoopingClubFoundation',
     icon: 'logo-youtube' as const,
   },
   {
     id: 'instagram',
     label: 'Instagram',
-    url: 'https://www.instagram.com/stooping_club_oakland/',
+    url: 'https://www.instagram.com/stooping_club_berkeley/',
     icon: 'logo-instagram' as const,
   },
   {

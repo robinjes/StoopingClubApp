@@ -4,18 +4,22 @@ import { View } from 'react-native';
 import { useRecentlyViewed } from '../../hooks/useRecentlyViewed';
 import type { ShopifyCollection, ShopifyProduct } from '../../types/shopify';
 import {
-  filterProductsByCategory,
+  filterProductsByCategories,
   getCategoryById,
   getCategoryProductCount,
 } from '../../utils/categoryFilters';
-import { filterProductsByLocation } from '../../utils/locationFilters';
+import { filterProductsByLocations } from '../../utils/locationFilters';
 import CollectionFilterBar from './CollectionFilterBar';
-import CollectionFilterSheet, { type CollectionFilters } from './CollectionFilterSheet';
+import CollectionFilterSheet, {
+  EMPTY_COLLECTION_FILTERS,
+  type CollectionFilters,
+} from './CollectionFilterSheet';
 import ProductGrid from './ProductGrid';
 
 type CollectionsViewProps = {
   collections: ShopifyCollection[];
   products: ShopifyProduct[];
+  initialCategoryId?: string | null;
   onProductPress?: (product: ShopifyProduct) => void;
   onAddToCart?: (product: ShopifyProduct) => void;
   addingProductId?: string | null;
@@ -25,64 +29,67 @@ type CollectionsViewProps = {
 export default function CollectionsView({
   collections,
   products,
+  initialCategoryId = null,
   onProductPress,
   onAddToCart,
   addingProductId = null,
   emptyMessage,
 }: CollectionsViewProps) {
   const [filters, setFilters] = useState<CollectionFilters>({
-    locationId: null,
-    categoryId: null,
+    locationIds: [],
+    categoryIds: initialCategoryId ? [initialCategoryId] : [],
   });
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const { recentProductIds } = useRecentlyViewed();
 
   useEffect(() => {
-    if (!filters.categoryId) {
-      return;
+    if (initialCategoryId) {
+      setFilters((current) => ({ ...current, categoryIds: [initialCategoryId] }));
     }
+  }, [initialCategoryId]);
 
-    const category = getCategoryById(filters.categoryId);
-    if (!category) {
-      setFilters((current) => ({ ...current, categoryId: null }));
-      return;
-    }
+  useEffect(() => {
+    setFilters((current) => {
+      const validCategoryIds = current.categoryIds.filter((categoryId) => {
+        const category = getCategoryById(categoryId);
+        if (!category) {
+          return false;
+        }
 
-    const locationScopedProducts = filterProductsByLocation(products, filters.locationId);
-    const count = getCategoryProductCount(
-      locationScopedProducts,
-      category,
-      collections,
-      recentProductIds,
-    );
+        const locationScopedProducts = filterProductsByLocations(products, current.locationIds);
+        return (
+          getCategoryProductCount(
+            locationScopedProducts,
+            category,
+            collections,
+            recentProductIds,
+          ) > 0
+        );
+      });
 
-    if (count === 0) {
-      setFilters((current) => ({ ...current, categoryId: null }));
-    }
-  }, [collections, filters.categoryId, filters.locationId, products, recentProductIds]);
+      if (
+        validCategoryIds.length === current.categoryIds.length &&
+        validCategoryIds.every((id, index) => id === current.categoryIds[index])
+      ) {
+        return current;
+      }
+
+      return { ...current, categoryIds: validCategoryIds };
+    });
+  }, [collections, filters.locationIds, filters.categoryIds, products, recentProductIds]);
 
   const filteredProducts = useMemo(() => {
-    const locationFiltered = filterProductsByLocation(products, filters.locationId);
+    const locationFiltered = filterProductsByLocations(products, filters.locationIds);
 
-    if (!filters.categoryId) {
-      return locationFiltered;
-    }
-
-    const category = getCategoryById(filters.categoryId);
-    if (!category) {
-      return locationFiltered;
-    }
-
-    return filterProductsByCategory(
+    return filterProductsByCategories(
       locationFiltered,
-      category,
+      filters.categoryIds,
       collections,
       recentProductIds,
     );
-  }, [collections, filters.categoryId, filters.locationId, products, recentProductIds]);
+  }, [collections, filters.categoryIds, filters.locationIds, products, recentProductIds]);
 
-  const activeFilterCount =
-    (filters.locationId ? 1 : 0) + (filters.categoryId ? 1 : 0);
+  const activeFilterCount = filters.locationIds.length + filters.categoryIds.length;
 
   const header = (
     <View className="pb-2">
@@ -90,6 +97,7 @@ export default function CollectionsView({
         filters={filters}
         activeCount={activeFilterCount}
         onPress={() => setFilterSheetVisible(true)}
+        onClear={() => setFilters(EMPTY_COLLECTION_FILTERS)}
       />
     </View>
   );

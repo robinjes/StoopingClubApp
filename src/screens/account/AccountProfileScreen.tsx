@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import ScreenLayout from '../../components/layout/ScreenLayout';
@@ -8,6 +9,8 @@ import { useCustomer } from '../../context/CustomerContext';
 import { useOverlay } from '../../context/OverlayContext';
 import { useTheme } from '../../context/ThemeContext';
 import type { AccountStackParamList } from '../../navigation/stacks/AccountStack';
+import { fetchCustomerProfile, getValidCustomerAccessToken } from '../../services/shopify/customerAuth';
+import type { CustomerProfile } from '../../types/customer';
 import { getCustomerFullName } from '../../utils/customerDisplay';
 
 type ProfileNavigation = NativeStackNavigationProp<AccountStackParamList, 'Profile'>;
@@ -16,20 +19,44 @@ export default function AccountProfileScreen() {
   const { colors } = useTheme();
   const { closeOverlay } = useOverlay();
   const navigation = useNavigation<ProfileNavigation>();
-  const {
-    isConfigured,
-    isAuthenticated,
-    isLoading,
-    profile,
-    addresses,
-    logout,
-    error,
-  } = useCustomer();
+  const { isConfigured, logout, error: contextError } = useCustomer();
+  const [profile, setProfile] = useState<CustomerProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadProfile = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const accessToken = await getValidCustomerAccessToken();
+      if (!accessToken) {
+        setProfile(null);
+        return;
+      }
+
+      const nextProfile = await fetchCustomerProfile(accessToken);
+      setProfile(nextProfile);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not load profile.';
+      setError(message);
+      setProfile(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadProfile();
+  }, [loadProfile]);
 
   async function handleSignOut() {
     await logout();
+    setProfile(null);
     closeOverlay();
   }
+
+  const displayError = error ?? contextError;
 
   return (
     <ScreenLayout showBack onBack={() => closeOverlay()}>
@@ -39,7 +66,10 @@ export default function AccountProfileScreen() {
         contentContainerClassName="px-4 pb-10 pt-6"
         showsVerticalScrollIndicator={false}
       >
-        <Text className="text-3xl font-bold" style={{ color: colors.text }}>
+        <Text
+          className="text-3xl leading-10"
+          style={{ fontFamily: 'Georgia', color: colors.brandDark }}
+        >
           Profile
         </Text>
 
@@ -51,110 +81,63 @@ export default function AccountProfileScreen() {
 
         {!isLoading && !isConfigured ? (
           <Text className="mt-6 text-sm leading-6" style={{ color: colors.textMuted }}>
-            Customer login is not configured yet.
+            Sign in is not available until Shopify storefront credentials are configured.
           </Text>
         ) : null}
 
-        {!isLoading && isConfigured && !isAuthenticated ? (
+        {!isLoading && displayError ? (
+          <Text className="mt-4 text-sm text-red-600">{displayError}</Text>
+        ) : null}
+
+        {!isLoading && !profile ? (
           <View className="mt-10 items-center">
             <Ionicons name="person-circle-outline" size={72} color={colors.textMuted} />
             <Text className="mt-4 text-center text-base leading-6" style={{ color: colors.textMuted }}>
-              Sign in to view your profile, orders, and pickup history.
+              Sign in to view your profile.
             </Text>
-            {error ? <Text className="mt-3 text-sm text-red-600">{error}</Text> : null}
             <Pressable
               className="mt-6 rounded-full px-8 py-3.5"
-              style={{ backgroundColor: colors.brand }}
-              onPress={() => navigation.navigate('CustomerSignIn', { mode: 'shop' })}
+              style={{ backgroundColor: colors.brandDark }}
+              onPress={() => navigation.navigate('SignInShop')}
             >
-              <Text className="font-semibold text-white">Sign in</Text>
+              <Text className="font-semibold text-white">Sign In</Text>
             </Pressable>
           </View>
         ) : null}
 
-        {!isLoading && isAuthenticated && profile ? (
+        {!isLoading && profile ? (
           <View className="mt-6">
             <View
-              className="rounded-2xl border px-4 py-4"
+              className="rounded-3xl border px-5 py-6"
               style={{ borderColor: colors.border, backgroundColor: colors.background }}
             >
-              <View className="flex-row items-center justify-between">
-                <Text className="text-xl font-bold" style={{ color: colors.text }}>
-                  {getCustomerFullName(profile)}
-                </Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Edit name">
-                  <Ionicons name="pencil-outline" size={18} color={colors.brand} />
-                </Pressable>
-              </View>
+              <Text className="text-sm font-medium" style={{ color: colors.brand }}>
+                Name
+              </Text>
+              <Text
+                className="mt-2 text-xl"
+                style={{ fontFamily: 'Georgia', color: colors.text }}
+              >
+                {getCustomerFullName(profile)}
+              </Text>
 
-              <Text className="mt-5 text-sm" style={{ color: colors.textMuted }}>
+              <Text className="mt-6 text-sm font-medium" style={{ color: colors.brand }}>
                 Email
               </Text>
-              <Text className="mt-1 text-base" style={{ color: colors.text }}>
+              <Text className="mt-2 text-base" style={{ color: colors.text }}>
                 {profile.email ?? '—'}
               </Text>
             </View>
 
-            <View
-              className="mt-4 rounded-2xl border px-4 py-4"
-              style={{ borderColor: colors.border, backgroundColor: colors.background }}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              className="mt-8 items-center self-center rounded-full px-8 py-3.5"
+              style={{ backgroundColor: colors.brandDark }}
+              onPress={() => void handleSignOut()}
             >
-              <View className="flex-row items-center justify-between">
-                <Text className="text-xl font-bold" style={{ color: colors.text }}>
-                  Addresses
-                </Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Add address">
-                  <Text className="text-base font-medium" style={{ color: colors.brand }}>
-                    + Add
-                  </Text>
-                </Pressable>
-              </View>
-
-              {addresses.length === 0 ? (
-                <View
-                  className="mt-4 flex-row items-center gap-2 rounded-xl border px-3 py-3"
-                  style={{ borderColor: colors.border, backgroundColor: colors.surfaceMuted }}
-                >
-                  <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} />
-                  <Text className="text-sm" style={{ color: colors.textMuted }}>
-                    No addresses added
-                  </Text>
-                </View>
-              ) : (
-                addresses.map((address) => (
-                  <View
-                    key={address.id}
-                    className="mt-4 rounded-xl border px-3 py-3"
-                    style={{ borderColor: colors.border, backgroundColor: colors.surfaceMuted }}
-                  >
-                    <Text className="text-sm leading-5" style={{ color: colors.text }}>
-                      {address.formatted ||
-                        [address.address1, address.city, address.provinceCode, address.zip]
-                          .filter(Boolean)
-                          .join(', ')}
-                    </Text>
-                  </View>
-                ))
-              )}
-            </View>
-
-            <View className="mt-8 flex-row flex-wrap items-center gap-4">
-              <Pressable
-                className="rounded-xl border px-6 py-3"
-                style={{ borderColor: colors.border, backgroundColor: colors.background }}
-                onPress={() => void handleSignOut()}
-              >
-                <Text className="font-medium" style={{ color: colors.brand }}>
-                  Sign out
-                </Text>
-              </Pressable>
-
-              <Pressable accessibilityRole="button" onPress={() => void handleSignOut()}>
-                <Text className="font-medium" style={{ color: colors.brand }}>
-                  Sign out of all devices
-                </Text>
-              </Pressable>
-            </View>
+              <Text className="text-sm font-semibold text-white">Sign Out</Text>
+            </Pressable>
           </View>
         ) : null}
       </ScrollView>

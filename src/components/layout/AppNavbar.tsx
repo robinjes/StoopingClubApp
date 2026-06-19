@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AccountDropdown from './AccountDropdown';
 import CustomerAvatar from './CustomerAvatar';
+import DevNotificationTestButtons from './DevNotificationTestButtons';
 import { useCart } from '../../context/CartContext';
 import { useCustomer } from '../../context/CustomerContext';
 import { useOverlay } from '../../context/OverlayContext';
@@ -44,8 +45,8 @@ export default function AppNavbar({ showBack = false, onBack }: AppNavbarProps) 
       className="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
       style={{ paddingTop: insets.top, borderBottomColor: colors.border, backgroundColor: colors.background }}
     >
-      <View className="h-14 flex-row items-center justify-between px-4">
-        <View className="flex-row items-center gap-2">
+      <View className="h-14 flex-row items-center px-4">
+        <View className="min-w-0 flex-1 flex-row items-center gap-2">
           {showBack ? (
             <Pressable
               accessibilityRole="button"
@@ -68,9 +69,21 @@ export default function AppNavbar({ showBack = false, onBack }: AppNavbarProps) 
               accessibilityLabel="Stooping Club"
             />
           </Pressable>
+          {__DEV__ && !showBack ? <DevNotificationTestButtons /> : null}
         </View>
 
-        <View className="flex-row items-center gap-3">
+        <Text
+          pointerEvents="none"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+          className="shrink px-3 text-center text-lg font-semibold"
+          style={{ fontFamily: 'Georgia', color: colors.brandDark }}
+        >
+          Stooping Club
+        </Text>
+
+        <View className="min-w-0 flex-1 flex-row items-center justify-end gap-3">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Contact us"

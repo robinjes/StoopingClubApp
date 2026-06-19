@@ -2,6 +2,23 @@ import type { ShopSortOption } from '../components/shop/ShopToolbar';
 import type { ShopifyProduct } from '../types/shopify';
 import { matchesProductSearch, scoreProductMatch } from './fuzzySearch';
 
+export const NEW_ARRIVALS_LIMIT = 48;
+
+export function getNewArrivalsProducts(products: ShopifyProduct[]): ShopifyProduct[] {
+  return [...products]
+    .sort((left, right) => {
+      const rightTime = Date.parse(right.createdAt);
+      const leftTime = Date.parse(left.createdAt);
+
+      if (Number.isFinite(rightTime) && Number.isFinite(leftTime)) {
+        return rightTime - leftTime;
+      }
+
+      return 0;
+    })
+    .slice(0, NEW_ARRIVALS_LIMIT);
+}
+
 export function searchProducts(products: ShopifyProduct[], query: string): ShopifyProduct[] {
   const trimmed = query.trim();
   if (!trimmed) {
@@ -38,6 +55,7 @@ export function sortProducts(products: ShopifyProduct[], sort: ShopSortOption): 
         (a, b) => Number.parseFloat(b.price.amount) - Number.parseFloat(a.price.amount),
       );
     case 'latest':
+      return sorted.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
     default:
       return sorted;
   }

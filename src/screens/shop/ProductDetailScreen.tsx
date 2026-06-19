@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -13,6 +14,7 @@ import {
 
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { useAddToCart } from '../../hooks/useAddToCart';
+import { useRecentlyViewed } from '../../hooks/useRecentlyViewed';
 import { useWishlist } from '../../hooks/useWishlist';
 import type { ShopStackParamList } from '../../navigation/stacks/ShopStack';
 import { useProductStore } from '../../store/productStore';
@@ -30,8 +32,15 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
     state.products.find((item) => item.id === productId),
   );
   const { handleAddToCart, addingProductId } = useAddToCart();
+  const { trackProductView } = useRecentlyViewed();
   const { isWishlisted, toggle } = useWishlist();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      void trackProductView(productId);
+    }, [productId, trackProductView]),
+  );
 
   if (!product) {
     return (

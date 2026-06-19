@@ -4,11 +4,12 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useTheme } from '../../context/ThemeContext';
 
-export type ShopMode = 'grid' | 'collections' | 'stroll';
+export type ShopMode = 'grid' | 'collections' | 'stroll' | 'newArrivals';
 
 type ShopModeOption = {
   id: ShopMode;
   label: string;
+  accessibilityLabel?: string;
   icon: ComponentProps<typeof Ionicons>['name'];
 };
 
@@ -16,6 +17,12 @@ const MODES: ShopModeOption[] = [
   { id: 'grid', label: 'Grid', icon: 'grid-outline' },
   { id: 'collections', label: 'Collections', icon: 'layers-outline' },
   { id: 'stroll', label: 'Stroll', icon: 'shuffle-outline' },
+  {
+    id: 'newArrivals',
+    label: 'New',
+    accessibilityLabel: 'New Arrivals',
+    icon: 'sparkles-outline',
+  },
 ];
 
 type ShopModeSwitcherProps = {
@@ -38,9 +45,10 @@ export default function ShopModeSwitcher({ mode, onModeChange }: ShopModeSwitche
             <Pressable
               key={option.id}
               accessibilityRole="button"
+              accessibilityLabel={option.accessibilityLabel ?? option.label}
               accessibilityState={{ selected: isActive }}
               onPress={() => onModeChange(option.id)}
-              className="flex-1 flex-row items-center justify-center gap-1.5 rounded-lg py-2.5"
+              className="flex-1 flex-row items-center justify-center gap-1 rounded-lg py-2.5"
               style={{
                 backgroundColor: isActive ? colors.background : 'transparent',
                 shadowColor: isActive ? '#000' : 'transparent',
@@ -52,12 +60,13 @@ export default function ShopModeSwitcher({ mode, onModeChange }: ShopModeSwitche
             >
               <Ionicons
                 name={option.icon}
-                size={16}
+                size={15}
                 color={isActive ? colors.brand : colors.textMuted}
               />
               <Text
-                className="text-sm font-medium"
+                className="text-xs font-medium"
                 style={{ color: isActive ? colors.brand : colors.textMuted }}
+                numberOfLines={1}
               >
                 {option.label}
               </Text>

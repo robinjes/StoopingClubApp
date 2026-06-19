@@ -21,11 +21,16 @@ import {
   getRecentCategory,
   getTopLevelCategories,
 } from '../../utils/categoryFilters';
-import { getLocationProductCount } from '../../utils/locationFilters';
+import { getLocationProductCount, filterProductsByLocations } from '../../utils/locationFilters';
 
 export type CollectionFilters = {
-  locationId: string | null;
-  categoryId: string | null;
+  locationIds: string[];
+  categoryIds: string[];
+};
+
+export const EMPTY_COLLECTION_FILTERS: CollectionFilters = {
+  locationIds: [],
+  categoryIds: [],
 };
 
 type CollectionFilterSheetProps = {
@@ -106,17 +111,25 @@ function FilterOptionRow({ option, selected, onPress }: FilterOptionRowProps) {
 function FilterSection({
   title,
   options,
-  selectedId,
-  onSelect,
+  selectedIds,
+  onToggle,
 }: {
   title: string;
   options: FilterOption[];
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
+  selectedIds: string[];
+  onToggle: (id: string | null) => void;
 }) {
   if (options.length === 0) {
     return null;
   }
+
+  const isSelected = (id: string | null) => {
+    if (id === null) {
+      return selectedIds.length === 0;
+    }
+
+    return selectedIds.includes(id);
+  };
 
   return (
     <View className="mb-5">
@@ -127,17 +140,39 @@ function FilterSection({
         <FilterOptionRow
           key={option.id ?? 'all'}
           option={option}
-          selected={selectedId === option.id}
-          onPress={() => onSelect(option.id)}
+          selected={isSelected(option.id)}
+          onPress={() => onToggle(option.id)}
         />
       ))}
     </View>
   );
 }
 
+function formatFilterLabels(labels: string[], fallback: string): string {
+  if (labels.length === 0) {
+    return fallback;
+  }
+
+  if (labels.length <= 2) {
+    return labels.join(', ');
+  }
+
+  return `${labels.slice(0, 2).join(', ')} +${labels.length - 2}`;
+}
+
 export function getFilterSummary(filters: CollectionFilters): string {
-  const locationLabel = getPickupLocationById(filters.locationId)?.label ?? 'All locations';
-  const categoryLabel = getCategoryById(filters.categoryId)?.label ?? 'All categories';
+  const locationLabel = formatFilterLabels(
+    filters.locationIds
+      .map((locationId) => getPickupLocationById(locationId)?.label)
+      .filter((label): label is string => Boolean(label)),
+    'All locations',
+  );
+  const categoryLabel = formatFilterLabels(
+    filters.categoryIds
+      .map((categoryId) => getCategoryById(categoryId)?.label)
+      .filter((label): label is string => Boolean(label)),
+    'All categories',
+  );
 
   return `${locationLabel} · ${categoryLabel}`;
 }
@@ -154,36 +189,46 @@ export default function CollectionFilterSheet({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
-  const [pendingLocationId, setPendingLocationId] = useState(filters.locationId);
-  const [pendingCategoryId, setPendingCategoryId] = useState(filters.categoryId);
+  const [pendingLocationIds, setPendingLocationIds] = useState(filters.locationIds);
+  const [pendingCategoryIds, setPendingCategoryIds] = useState(filters.categoryIds);
 
   useEffect(() => {
     if (visible) {
-      setPendingLocationId(filters.locationId);
-      setPendingCategoryId(filters.categoryId);
+      setPendingLocationIds(filters.locationIds);
+      setPendingCategoryIds(filters.categoryIds);
     }
-  }, [filters.categoryId, filters.locationId, visible]);
+  }, [filters.categoryIds, filters.locationIds, visible]);
 
-  const locationScopedProducts = useMemo(() => {
-    if (!pendingLocationId) {
-      return products;
+  const locationScopedProducts = useMemo(
+    () => filterProductsByLocations(products, pendingLocationIds),
+    [pendingLocationIds, products],
+  );
+
+  function togglePendingLocationId(locationId: string | null) {
+    if (locationId === null) {
+      setPendingLocationIds([]);
+      return;
     }
 
-    const location = PICKUP_LOCATIONS.find((item) => item.id === pendingLocationId);
-    if (!location) {
-      return products;
-    }
-
-    return products.filter((product) =>
-      location.tagMatches.some((tag) =>
-        product.tags.some(
-          (productTag) =>
-            productTag.toLowerCase() === tag.toLowerCase() ||
-            productTag.toLowerCase().includes(tag.toLowerCase()),
-        ),
-      ),
+    setPendingLocationIds((current) =>
+      current.includes(locationId)
+        ? current.filter((id) => id !== locationId)
+        : [...current, locationId],
     );
-  }, [pendingLocationId, products]);
+  }
+
+  function togglePendingCategoryId(categoryId: string | null) {
+    if (categoryId === null) {
+      setPendingCategoryIds([]);
+      return;
+    }
+
+    setPendingCategoryIds((current) =>
+      current.includes(categoryId)
+        ? current.filter((id) => id !== categoryId)
+        : [...current, categoryId],
+    );
+  }
 
   const locationOptions = useMemo<FilterOption[]>(() => {
     const allCount = products.length;
@@ -265,23 +310,38 @@ export default function CollectionFilterSheet({
   }, [collections, locationScopedProducts, recentProductIds]);
 
   useEffect(() => {
-    if (!pendingCategoryId) {
-      return;
-    }
+    setPendingCategoryIds((current) => {
+      const validCategoryIds = current.filter((categoryId) =>
+        categoryOptions.some((option) => option.id === categoryId),
+      );
 
-    const stillVisible = categoryOptions.some((option) => option.id === pendingCategoryId);
-    if (!stillVisible) {
-      setPendingCategoryId(null);
-    }
-  }, [categoryOptions, pendingCategoryId]);
+      if (
+        validCategoryIds.length === current.length &&
+        validCategoryIds.every((id, index) => id === current[index])
+      ) {
+        return current;
+      }
+
+      return validCategoryIds;
+    });
+  }, [categoryOptions]);
 
   const handleApply = () => {
     onApply({
-      locationId: pendingLocationId,
-      categoryId: pendingCategoryId,
+      locationIds: pendingLocationIds,
+      categoryIds: pendingCategoryIds,
     });
     onClose();
   };
+
+  const handleClear = () => {
+    setPendingLocationIds([]);
+    setPendingCategoryIds([]);
+    onApply(EMPTY_COLLECTION_FILTERS);
+    onClose();
+  };
+
+  const hasPendingFilters = pendingLocationIds.length > 0 || pendingCategoryIds.length > 0;
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
@@ -304,7 +364,7 @@ export default function CollectionFilterSheet({
                 Filter collections
               </Text>
               <Text className="mt-1 text-sm leading-5 text-gray-500 dark:text-gray-400">
-                Choose a pickup location and category to narrow what you see.
+                Choose one or more pickup locations and categories to narrow what you see.
               </Text>
             </View>
 
@@ -327,27 +387,46 @@ export default function CollectionFilterSheet({
               <FilterSection
                 title="Pickup location"
                 options={locationOptions}
-                selectedId={pendingLocationId}
-                onSelect={setPendingLocationId}
+                selectedIds={pendingLocationIds}
+                onToggle={togglePendingLocationId}
               />
             ) : null}
 
             <FilterSection
               title="Category"
               options={categoryOptions}
-              selectedId={pendingCategoryId}
-              onSelect={setPendingCategoryId}
+              selectedIds={pendingCategoryIds}
+              onToggle={togglePendingCategoryId}
             />
           </ScrollView>
 
-          <Pressable
-            onPress={handleApply}
-            className="mt-2 flex-row items-center justify-center gap-2 rounded-full py-4"
-            style={{ backgroundColor: colors.brand }}
-          >
-            <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-            <Text className="text-base font-semibold text-white">Apply filters</Text>
-          </Pressable>
+          <View className="mt-2 flex-row gap-3">
+            {hasPendingFilters ? (
+              <Pressable
+                onPress={handleClear}
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-full border py-4"
+                style={{ borderColor: colors.border }}
+                accessibilityRole="button"
+                accessibilityLabel="Clear filters"
+              >
+                <Ionicons name="close-circle-outline" size={18} color={colors.textMuted} />
+                <Text className="text-base font-semibold" style={{ color: colors.textMuted }}>
+                  Clear
+                </Text>
+              </Pressable>
+            ) : null}
+
+            <Pressable
+              onPress={handleApply}
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-full py-4"
+              style={{ backgroundColor: colors.brand }}
+              accessibilityRole="button"
+              accessibilityLabel="Apply filters"
+            >
+              <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+              <Text className="text-base font-semibold text-white">Apply filters</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </Modal>

@@ -14,8 +14,14 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.stoopingclub.app",
       "infoPlist": {
-        "NSUserNotificationsUsageDescription": "Stooping Club sends Friday order reminders and Sunday pickup reminders."
+        "NSUserNotificationsUsageDescription": "Stooping Club sends Friday order reminders and Sunday pickup reminders.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["stoopingclubapp", "shop.74832183474.app"]
+          }
+        ]
       },
       "splash": {
         "image": "./assets/stoopingclublogo.png",
@@ -24,6 +30,7 @@
       }
     },
     "android": {
+      "package": "com.stoopingclub.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -35,7 +42,26 @@
         "resizeMode": "contain",
         "backgroundColor": "#F7F4EE"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [
+            {
+              "scheme": "shop.74832183474.app",
+              "host": "account",
+              "pathPrefix": "/callback"
+            },
+            {
+              "scheme": "stoopingclubapp",
+              "host": "account",
+              "pathPrefix": "/callback"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

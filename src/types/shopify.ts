@@ -23,6 +23,7 @@ export type ShopifyProduct = {
   description: string;
   handle: string;
   tags: string[];
+  createdAt: string;
   images: ShopifyImage[];
   price: ShopifyMoney;
   compareAtPrice: ShopifyMoney | null;
@@ -59,6 +60,7 @@ export type ShopifyProductNode = {
   description: string;
   handle: string;
   tags: string[];
+  createdAt: string;
   images: {
     edges: Array<{ node: ShopifyImage }>;
   };

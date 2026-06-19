@@ -71,6 +71,37 @@ export function filterProductsByCategory(
   return products.filter((product) => productMatchesCategory(product, category, collections));
 }
 
+export function filterProductsByCategories(
+  products: ShopifyProduct[],
+  categoryIds: string[],
+  collections: ShopifyCollection[],
+  recentProductIds: string[] = [],
+): ShopifyProduct[] {
+  if (categoryIds.length === 0) {
+    return products;
+  }
+
+  const matchedIds = new Set<string>();
+
+  for (const categoryId of categoryIds) {
+    const category = getCategoryById(categoryId);
+    if (!category) {
+      continue;
+    }
+
+    for (const product of filterProductsByCategory(
+      products,
+      category,
+      collections,
+      recentProductIds,
+    )) {
+      matchedIds.add(product.id);
+    }
+  }
+
+  return products.filter((product) => matchedIds.has(product.id));
+}
+
 export function getCategoryProductCount(
   products: ShopifyProduct[],
   category: ShopCategoryDefinition,

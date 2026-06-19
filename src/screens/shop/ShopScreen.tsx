@@ -14,21 +14,30 @@ import { useOpenProduct } from '../../hooks/useOpenProduct';
 import { refreshShopData, useShopData } from '../../hooks/useShopData';
 import { useCollectionStore } from '../../store/collectionStore';
 import { useProductStore } from '../../store/productStore';
+import { useShopNavigationStore } from '../../store/shopNavigationStore';
 import { useTheme } from '../../context/ThemeContext';
 import { filterInStockProducts } from '../../utils/productStock';
-import { hasActiveSearch, searchProducts } from '../../utils/shopFilters';
+import { getNewArrivalsProducts, hasActiveSearch, searchProducts } from '../../utils/shopFilters';
 
 export default function ShopScreen() {
   const { colors } = useTheme();
   const [mode, setMode] = useState<ShopMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [collectionsCategoryId, setCollectionsCategoryId] = useState<string | null>(null);
+  const takePendingCategory = useShopNavigationStore((state) => state.takePendingCategory);
 
   useShopData();
 
   useFocusEffect(
     useCallback(() => {
       void refreshShopData();
-    }, []),
+
+      const categoryId = takePendingCategory();
+      if (categoryId) {
+        setMode('collections');
+        setCollectionsCategoryId(categoryId);
+      }
+    }, [takePendingCategory]),
   );
 
   const { handleAddToCart, addingProductId } = useAddToCart();
@@ -46,6 +55,10 @@ export default function ShopScreen() {
     [inStockProducts, searchQuery],
   );
   const isSearching = hasActiveSearch(searchQuery);
+  const newArrivalProducts = useMemo(
+    () => getNewArrivalsProducts(searchedProducts),
+    [searchedProducts],
+  );
 
   const showInitialLoader = isLoading && products.length === 0;
 
@@ -96,6 +109,7 @@ export default function ShopScreen() {
               <CollectionsView
                 collections={collections}
                 products={searchedProducts}
+                initialCategoryId={collectionsCategoryId}
                 onProductPress={openProduct}
                 onAddToCart={handleAddToCart}
                 addingProductId={addingProductId}
@@ -116,6 +130,19 @@ export default function ShopScreen() {
                   isSearching
                     ? 'No items match that search for a stroll.'
                     : undefined
+                }
+              />
+            ) : null}
+            {mode === 'newArrivals' ? (
+              <ProductGrid
+                products={newArrivalProducts}
+                onProductPress={openProduct}
+                onAddToCart={handleAddToCart}
+                addingProductId={addingProductId}
+                emptyMessage={
+                  isSearching
+                    ? 'No new arrivals match that search.'
+                    : 'No new arrivals right now.'
                 }
               />
             ) : null}

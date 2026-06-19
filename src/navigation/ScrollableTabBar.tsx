@@ -24,8 +24,6 @@ const TAB_ICONS: Record<string, { outline: IoniconName; filled: IoniconName }> =
   ShopTab: { outline: 'bag-outline', filled: 'bag' },
   WishlistTab: { outline: 'heart-outline', filled: 'heart' },
   DonateTab: { outline: 'gift-outline', filled: 'gift' },
-  EventsTab: { outline: 'calendar-outline', filled: 'calendar' },
-  ResourcesTab: { outline: 'book-outline', filled: 'book' },
   AboutTab: { outline: 'information-circle-outline', filled: 'information-circle' },
   GetInvolvedTab: { outline: 'people-outline', filled: 'people' },
 };

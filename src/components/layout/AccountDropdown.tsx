@@ -7,8 +7,6 @@ import { useOverlay, type AccountRoute } from '../../context/OverlayContext';
 import { useTheme } from '../../context/ThemeContext';
 import { getCustomerGreetingName } from '../../utils/customerDisplay';
 
-const SHOP_PURPLE = '#5433EB';
-
 type AccountDropdownProps = {
   visible: boolean;
   onClose: () => void;
@@ -57,7 +55,7 @@ export default function AccountDropdown({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Open profile"
-                  onPress={() => handleNavigate('Profile')}
+                  onPress={() => handleNavigate('Orders')}
                 >
                   <Text className="text-lg font-bold" style={{ color: colors.text }}>
                     Hi {greetingName}
@@ -78,37 +76,15 @@ export default function AccountDropdown({
                 </Text>
 
                 <Pressable
-                  className="mb-3 items-center rounded-full py-3.5"
-                  style={{ backgroundColor: SHOP_PURPLE }}
-                  onPress={() => handleNavigate('CustomerSignIn')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open profile"
+                  className="mb-4 flex-row items-center justify-center gap-2 rounded-full py-3.5"
+                  style={{ backgroundColor: colors.brandDark }}
+                  onPress={() => handleNavigate('Orders')}
                 >
-                  <Text className="text-sm font-semibold text-white">
-                    Sign in with <Text style={{ fontWeight: '800' }}>shop</Text>
-                  </Text>
+                  <Ionicons name="person-outline" size={18} color="#FFFFFF" />
+                  <Text className="text-sm font-semibold text-white">Profile</Text>
                 </Pressable>
-
-                <Pressable
-                  className="mb-4 items-center rounded-full py-3.5"
-                  style={{ backgroundColor: colors.brand }}
-                  onPress={() => handleNavigate('SignInEmail')}
-                >
-                  <Text className="text-sm font-semibold text-white">Other sign in options</Text>
-                </Pressable>
-
-                <View className="flex-row gap-2">
-                  <DropdownAction
-                    label="Orders"
-                    icon="cube-outline"
-                    colors={colors}
-                    onPress={() => handleNavigate('Orders')}
-                  />
-                  <DropdownAction
-                    label="Profile"
-                    icon="person-outline"
-                    colors={colors}
-                    onPress={() => handleNavigate('Profile')}
-                  />
-                </View>
 
                 <ThemeToggleSwitch colors={colors} isDark={isDark} onToggle={toggleTheme} />
               </>
@@ -117,25 +93,5 @@ export default function AccountDropdown({
         </View>
       </Pressable>
     </Modal>
-  );
-}
-
-type DropdownActionProps = {
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  colors: ReturnType<typeof useTheme>['colors'];
-  onPress: () => void;
-};
-
-function DropdownAction({ label, icon, colors, onPress }: DropdownActionProps) {
-  return (
-    <Pressable
-      className="flex-1 flex-row items-center justify-center gap-1.5 rounded-full py-2.5"
-      style={{ backgroundColor: colors.brandDark }}
-      onPress={onPress}
-    >
-      <Ionicons name={icon} size={14} color="#FFFFFF" />
-      <Text className="text-xs font-semibold text-white">{label}</Text>
-    </Pressable>
   );
 }

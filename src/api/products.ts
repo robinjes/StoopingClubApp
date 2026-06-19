@@ -15,6 +15,7 @@ const PRODUCTS_QUERY = `
           description
           handle
           tags
+          createdAt
           images(first: 10) {
             edges {
               node {
@@ -87,6 +88,7 @@ function mapProductNode(node: ShopifyProductNode): ShopifyProduct {
     description: node.description,
     handle: node.handle,
     tags: node.tags,
+    createdAt: node.createdAt,
     images: node.images.edges.map(({ node: image }) => image),
     price: firstVariant?.price ?? { amount: '0', currencyCode: 'USD' },
     compareAtPrice: firstVariant?.compareAtPrice ?? null,

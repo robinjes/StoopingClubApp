@@ -144,7 +144,7 @@ export default function PickupsScreen({ onClose }: PickupsScreenProps) {
 
   function handleLogin() {
     clearError();
-    openAccount('CustomerSignIn');
+    openAccount('SignInShop');
   }
 
   async function handleConfirmPickup(orderId: string) {
@@ -187,8 +187,7 @@ export default function PickupsScreen({ onClose }: PickupsScreenProps) {
         {!isConfigured ? (
           <View className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
             <Text className="text-sm leading-5 text-amber-900">
-              Customer login is not configured yet. Add your Customer Account API client ID to
-              enable the no-show system.
+              Shopify is not configured yet. Add your storefront credentials to enable sign in.
             </Text>
           </View>
         ) : null}

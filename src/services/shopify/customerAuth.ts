@@ -1,14 +1,28 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AuthSession from 'expo-auth-session';
-import * as Crypto from 'expo-crypto';
+import * as WebBrowser from 'expo-web-browser';
 
 import { customerAccountConfig } from './customerAccount';
-
-export type CustomerLoginMode = 'shop' | 'email';
-import { shopifyConfig } from './config';
 import { fetchCustomerDiscovery } from './customerDiscovery';
+import { customerAccountFetch } from './customerApi';
+import type { CustomerProfile } from '../../types/customer';
 
-const TOKEN_STORAGE_KEY = 'shopify_customer_tokens';
+WebBrowser.maybeCompleteAuthSession();
+
+export const ACCESS_TOKEN_KEY = 'shopify_access_token';
+export const REFRESH_TOKEN_KEY = 'shopify_refresh_token';
+const EXPIRES_AT_KEY = 'shopify_token_expires_at';
+const LEGACY_STOREFRONT_TOKEN_KEY = 'shopify_customer_access_token';
+const LEGACY_STOREFRONT_EXPIRES_KEY = 'shopify_customer_token_expires_at';
+
+export { customerAccountConfig } from './customerAccount';
+export const CUSTOMER_REGISTER_URL = customerAccountConfig.registerUrl;
+export const CUSTOMER_ORDERS_URL = customerAccountConfig.ordersUrl;
+
+export type CustomerOAuthSession = {
+  authUrl: string;
+  codeVerifier: string;
+};
 
 export type CustomerTokens = {
   accessToken: string;
@@ -16,62 +30,18 @@ export type CustomerTokens = {
   expiresAt: number;
 };
 
-export type CustomerLoginSession = {
-  authUrl: string;
-  codeVerifier: string;
-};
-
-type StoredTokens = CustomerTokens;
-
 type TokenResponse = {
   access_token: string;
   refresh_token: string;
   expires_in: number;
-};
-
-export type CustomerAuthCallback = {
-  code?: string;
   error?: string;
-  errorDescription?: string;
+  error_description?: string;
 };
 
-export async function loadStoredCustomerTokens(): Promise<CustomerTokens | null> {
-  const raw = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(raw) as StoredTokens;
-  } catch {
-    await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
-    return null;
-  }
-}
-
-async function persistCustomerTokens(tokens: CustomerTokens | null): Promise<void> {
-  if (!tokens) {
-    await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
-    return;
-  }
-
-  await AsyncStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
-}
-
-function toCustomerTokens(response: TokenResponse): CustomerTokens {
-  return {
-    accessToken: response.access_token,
-    refreshToken: response.refresh_token,
-    expiresAt: Date.now() + response.expires_in * 1000,
-  };
-}
-
-const LEGACY_REDIRECT_URI = 'stoopingclubapp://account/callback';
+export { getCustomerAuthStatus } from './customerAccount';
 
 export function isCustomerAuthCallback(url: string): boolean {
-  return (
-    url.startsWith(customerAccountConfig.redirectUri) || url.startsWith(LEGACY_REDIRECT_URI)
-  );
+  return url.startsWith(customerAccountConfig.redirectUri);
 }
 
 export function parseOAuthErrorFromUrl(url: string): string | null {
@@ -89,19 +59,90 @@ export function parseOAuthErrorFromUrl(url: string): string | null {
   return params.get('error_description') ?? error;
 }
 
-export function parseCustomerAuthCallback(url: string): CustomerAuthCallback | null {
+export function parseAuthCodeFromCallback(url: string): string | null {
   if (!isCustomerAuthCallback(url)) {
     return null;
   }
 
+  const oauthError = parseOAuthErrorFromUrl(url);
+  if (oauthError) {
+    throw new Error(oauthError);
+  }
+
   const query = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
-  const params = new URLSearchParams(query);
+  return new URLSearchParams(query).get('code');
+}
+
+function createAuthRequest(loginHint?: string): AuthSession.AuthRequest {
+  return new AuthSession.AuthRequest({
+    clientId: customerAccountConfig.clientId,
+    scopes: [...customerAccountConfig.scopes],
+    redirectUri: customerAccountConfig.redirectUri,
+    usePKCE: true,
+    responseType: AuthSession.ResponseType.Code,
+    extraParams: {
+      locale: 'en',
+      region_country: 'US',
+      ...(loginHint ? { login_hint: loginHint } : {}),
+    },
+  });
+}
+
+/** Starts email code sign-in — Shopify sends a one-time code to the email address. */
+export async function prepareEmailCodeLoginSession(email: string): Promise<CustomerOAuthSession> {
+  const discovery = await fetchCustomerDiscovery();
+  const request = createAuthRequest(email.trim());
+
+  const authUrl = await request.makeAuthUrlAsync({
+    authorizationEndpoint: discovery.authorizationEndpoint,
+  });
+
+  if (!request.codeVerifier) {
+    throw new Error('Missing PKCE verifier for sign in.');
+  }
+
+  return { authUrl, codeVerifier: request.codeVerifier };
+}
+
+export async function saveCustomerTokens(
+  accessToken: string,
+  refreshToken: string,
+  expiresIn: number,
+): Promise<void> {
+  await AsyncStorage.multiSet([
+    [ACCESS_TOKEN_KEY, accessToken],
+    [REFRESH_TOKEN_KEY, refreshToken],
+    [EXPIRES_AT_KEY, String(Date.now() + expiresIn * 1000)],
+  ]);
+  await AsyncStorage.multiRemove([LEGACY_STOREFRONT_TOKEN_KEY, LEGACY_STOREFRONT_EXPIRES_KEY]);
+}
+
+export async function loadStoredCustomerTokens(): Promise<CustomerTokens | null> {
+  const [[, accessToken], [, refreshToken], [, expiresAtRaw]] = await AsyncStorage.multiGet([
+    ACCESS_TOKEN_KEY,
+    REFRESH_TOKEN_KEY,
+    EXPIRES_AT_KEY,
+  ]);
+
+  if (!accessToken || !refreshToken) {
+    return null;
+  }
 
   return {
-    code: params.get('code') ?? undefined,
-    error: params.get('error') ?? undefined,
-    errorDescription: params.get('error_description') ?? undefined,
+    accessToken,
+    refreshToken,
+    expiresAt: expiresAtRaw ? Number(expiresAtRaw) : Date.now() + 3_600_000,
   };
+}
+
+export async function clearCustomerTokens(): Promise<void> {
+  await AsyncStorage.multiRemove([
+    ACCESS_TOKEN_KEY,
+    REFRESH_TOKEN_KEY,
+    EXPIRES_AT_KEY,
+    LEGACY_STOREFRONT_TOKEN_KEY,
+    LEGACY_STOREFRONT_EXPIRES_KEY,
+  ]);
 }
 
 async function exchangeCodeForTokens(
@@ -111,7 +152,7 @@ async function exchangeCodeForTokens(
   const discovery = await fetchCustomerDiscovery();
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
-    client_id: shopifyConfig.customerAccountClientId,
+    client_id: customerAccountConfig.clientId,
     redirect_uri: customerAccountConfig.redirectUri,
     code,
     code_verifier: codeVerifier,
@@ -119,20 +160,23 @@ async function exchangeCodeForTokens(
 
   const response = await fetch(discovery.tokenEndpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   });
 
-  const json = (await response.json()) as TokenResponse & { error?: string; error_description?: string };
+  const json = (await response.json()) as TokenResponse;
 
   if (!response.ok) {
-    throw new Error(json.error_description ?? json.error ?? 'Could not complete customer login.');
+    throw new Error(json.error_description ?? json.error ?? 'Token exchange failed.');
   }
 
-  const tokens = toCustomerTokens(json);
-  await persistCustomerTokens(tokens);
+  const tokens: CustomerTokens = {
+    accessToken: json.access_token,
+    refreshToken: json.refresh_token,
+    expiresAt: Date.now() + json.expires_in * 1000,
+  };
+
+  await saveCustomerTokens(tokens.accessToken, tokens.refreshToken, json.expires_in);
   return tokens;
 }
 
@@ -140,148 +184,30 @@ async function refreshCustomerTokens(refreshToken: string): Promise<CustomerToke
   const discovery = await fetchCustomerDiscovery();
   const body = new URLSearchParams({
     grant_type: 'refresh_token',
-    client_id: shopifyConfig.customerAccountClientId,
+    client_id: customerAccountConfig.clientId,
     refresh_token: refreshToken,
   });
 
   const response = await fetch(discovery.tokenEndpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   });
 
-  const json = (await response.json()) as TokenResponse & { error?: string; error_description?: string };
+  const json = (await response.json()) as TokenResponse;
 
   if (!response.ok) {
-    throw new Error(json.error_description ?? json.error ?? 'Could not refresh customer session.');
+    throw new Error(json.error_description ?? json.error ?? 'Token refresh failed.');
   }
 
-  const tokens = toCustomerTokens(json);
-  await persistCustomerTokens(tokens);
+  const tokens: CustomerTokens = {
+    accessToken: json.access_token,
+    refreshToken: json.refresh_token,
+    expiresAt: Date.now() + json.expires_in * 1000,
+  };
+
+  await saveCustomerTokens(tokens.accessToken, tokens.refreshToken, json.expires_in);
   return tokens;
-}
-
-function createPkceAuthRequest(): AuthSession.AuthRequest {
-  return new AuthSession.AuthRequest({
-    clientId: shopifyConfig.customerAccountClientId,
-    scopes: [...customerAccountConfig.scopes],
-    redirectUri: customerAccountConfig.redirectUri,
-    usePKCE: true,
-    responseType: AuthSession.ResponseType.Code,
-  });
-}
-
-export function extractAuthStateFromUrl(url: string): string | null {
-  try {
-    const normalized = url.startsWith('//') ? `https:${url}` : url;
-    return new URL(normalized).searchParams.get('auth_state');
-  } catch {
-    const match = url.match(/[?&]auth_state=([^&]+)/);
-    return match?.[1] ?? null;
-  }
-}
-
-export function buildShopAccountsLoginUrl(authState: string): string {
-  const searchParams = new URLSearchParams({
-    analytics_context: 'loginWithShopSelfServe',
-    analytics_trace_id: Crypto.randomUUID(),
-    auth_state: authState,
-    authentication_level: 'email',
-    avoid_sdk_session: 'false',
-    compact_layout: 'true',
-    flow: 'default',
-    flow_version: 'account-actions-popover',
-    locale: 'en',
-    next: 'OAuthContinue',
-    preact: 'true',
-    redirect_type: 'iframe',
-    require_verification: 'false',
-    return_uri: customerAccountConfig.shopReturnUri,
-    sign_up_enabled: 'true',
-    storefront_domain: customerAccountConfig.storefrontDomain,
-    ux_mode: 'iframe',
-  });
-
-  return `${customerAccountConfig.shopAppBase}/accounts/login?${searchParams.toString()}`;
-}
-
-function buildShopSdkSessionUrl(params: { codeChallenge: string; state: string }): string {
-  const searchParams = new URLSearchParams({
-    analytics_context: 'loginWithShopSelfServe',
-    analytics_trace_id: Crypto.randomUUID(),
-    authentication_level: 'email',
-    avoid_sdk_session: 'false',
-    client_id: shopifyConfig.customerAccountClientId,
-    code_challenge: params.codeChallenge,
-    code_challenge_method: 'S256',
-    compact_layout: 'true',
-    cross_domain_shopify: 'true',
-    flow: 'default',
-    flow_version: 'account-actions-popover',
-    locale: 'en',
-    next: 'OAuthContinue',
-    preact: 'true',
-    redirect_type: 'iframe',
-    redirect_uri: customerAccountConfig.redirectUri,
-    require_verification: 'false',
-    response_type: 'code',
-    return_uri: customerAccountConfig.shopReturnUri,
-    scope: customerAccountConfig.scopes.join(' '),
-    sign_up_enabled: 'true',
-    state: params.state,
-    storefront_domain: customerAccountConfig.storefrontDomain,
-    ux_mode: 'iframe',
-  });
-
-  return `${customerAccountConfig.shopAppBase}/pay/sdk-session?${searchParams.toString()}`;
-}
-
-/** Shop sign-in — shop.app SDK session (not the storefront website). */
-export async function prepareShopLogin(): Promise<CustomerLoginSession> {
-  const request = createPkceAuthRequest();
-  const discovery = await fetchCustomerDiscovery();
-
-  const oauthUrl = await request.makeAuthUrlAsync({
-    authorizationEndpoint: discovery.authorizationEndpoint,
-  });
-  const oauthParams = new URL(oauthUrl).searchParams;
-  const codeChallenge = oauthParams.get('code_challenge');
-  const state = oauthParams.get('state');
-
-  if (!request.codeVerifier || !codeChallenge || !state) {
-    throw new Error('Missing PKCE parameters for Shop login.');
-  }
-
-  return {
-    authUrl: buildShopSdkSessionUrl({ codeChallenge, state }),
-    codeVerifier: request.codeVerifier,
-  };
-}
-
-export async function prepareCustomerLogin(): Promise<CustomerLoginSession> {
-  const discovery = await fetchCustomerDiscovery();
-  const request = createPkceAuthRequest();
-
-  const authUrl = await request.makeAuthUrlAsync({
-    authorizationEndpoint: discovery.authorizationEndpoint,
-  });
-
-  if (!request.codeVerifier) {
-    throw new Error('Missing PKCE verifier for customer login.');
-  }
-
-  return {
-    authUrl,
-    codeVerifier: request.codeVerifier,
-  };
-}
-
-export async function prepareCustomerLoginByMode(
-  mode: CustomerLoginMode,
-): Promise<CustomerLoginSession> {
-  return mode === 'shop' ? prepareShopLogin() : prepareCustomerLogin();
 }
 
 export async function completeCustomerLogin(
@@ -306,11 +232,53 @@ export async function getValidCustomerAccessToken(): Promise<string | null> {
     const refreshed = await refreshCustomerTokens(stored.refreshToken);
     return refreshed.accessToken;
   } catch {
-    await persistCustomerTokens(null);
+    await clearCustomerTokens();
     return null;
   }
 }
 
 export async function logoutCustomer(): Promise<void> {
-  await persistCustomerTokens(null);
+  await clearCustomerTokens();
+}
+
+const CUSTOMER_PROFILE_QUERY = `
+  query CustomerProfile {
+    customer {
+      id
+      firstName
+      lastName
+      emailAddress {
+        emailAddress
+      }
+    }
+  }
+`;
+
+type CustomerProfileResponse = {
+  customer: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    emailAddress: {
+      emailAddress: string;
+    } | null;
+  } | null;
+};
+
+export async function fetchCustomerProfile(accessToken: string): Promise<CustomerProfile> {
+  const data = await customerAccountFetch<CustomerProfileResponse>(
+    CUSTOMER_PROFILE_QUERY,
+    accessToken,
+  );
+
+  if (!data.customer) {
+    throw new Error('Could not load customer profile.');
+  }
+
+  return {
+    id: data.customer.id,
+    email: data.customer.emailAddress?.emailAddress ?? null,
+    firstName: data.customer.firstName,
+    lastName: data.customer.lastName,
+  };
 }

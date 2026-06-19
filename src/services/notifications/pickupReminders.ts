@@ -112,3 +112,52 @@ export async function initializePickupReminders(): Promise<boolean> {
   await schedulePickupReminders();
   return true;
 }
+
+export type PickupReminderResult =
+  | { ok: true }
+  | { ok: false; reason: 'simulator' | 'permission_denied'; message: string };
+
+export async function sendTestPickupReminderNotification(): Promise<PickupReminderResult> {
+  if (!Device.isDevice) {
+    return {
+      ok: false,
+      reason: 'simulator',
+      message: 'Pickup reminders need a physical device to show as notifications.',
+    };
+  }
+
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+
+  if (finalStatus !== 'granted') {
+    return {
+      ok: false,
+      reason: 'permission_denied',
+      message: 'Allow notifications to receive pickup reminders.',
+    };
+  }
+
+  await ensureAndroidChannel();
+
+  const pickupSite = getCurrentPickupSite();
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'Pickup day',
+      body: `Head to ${pickupSite.name} today to collect your Stooping Club order.`,
+      data: { type: 'sunday-pickup-reminder', pickupSiteId: pickupSite.id, test: true },
+      ...(Platform.OS === 'android' ? { channelId: REMINDER_CHANNEL_ID } : {}),
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: 1,
+    },
+  });
+
+  return { ok: true };
+}

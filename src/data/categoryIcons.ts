@@ -4,6 +4,7 @@ import type { Ionicons } from '@expo/vector-icons';
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 export const CATEGORY_ICONS: Record<string, IoniconName> = {
+  apparel: 'shirt-outline',
   accessories: 'watch-outline',
   art: 'color-palette-outline',
   'baby-products': 'happy-outline',
@@ -17,6 +18,8 @@ export const CATEGORY_ICONS: Record<string, IoniconName> = {
   health: 'heart-outline',
   'holiday-decor': 'snow-outline',
   'home-decor': 'home-outline',
+  'home-improvement': 'hammer-outline',
+  collectibles: 'diamond-outline',
   household: 'basket-outline',
   kitchenware: 'restaurant-outline',
   music: 'musical-notes-outline',

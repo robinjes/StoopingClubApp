@@ -36,6 +36,19 @@ export function filterProductsByLocation(
   return products.filter((product) => productMatchesLocation(product, locationId));
 }
 
+export function filterProductsByLocations(
+  products: ShopifyProduct[],
+  locationIds: string[],
+): ShopifyProduct[] {
+  if (locationIds.length === 0) {
+    return products;
+  }
+
+  return products.filter((product) =>
+    locationIds.some((locationId) => productMatchesLocation(product, locationId)),
+  );
+}
+
 export function getLocationProductCount(
   products: ShopifyProduct[],
   locationId: string | null,

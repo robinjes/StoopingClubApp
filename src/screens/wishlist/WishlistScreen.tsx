@@ -6,7 +6,6 @@ import { Text, View } from 'react-native';
 import ProductGrid from '../../components/shop/ProductGrid';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { useAddToCart } from '../../hooks/useAddToCart';
-import { useRecentlyViewed } from '../../hooks/useRecentlyViewed';
 import { useShopData } from '../../hooks/useShopData';
 import { useWishlist } from '../../hooks/useWishlist';
 import type { WishlistStackParamList } from '../../navigation/stacks/WishlistStack';
@@ -24,7 +23,6 @@ export default function WishlistScreen() {
   const { productIds } = useWishlist();
   const products = useProductStore((state) => state.products);
   const { handleAddToCart, addingProductId } = useAddToCart();
-  const { trackProductView } = useRecentlyViewed();
 
   const wishlistProducts = useMemo(
     () => products.filter((product) => productIds.includes(product.id)),
@@ -33,10 +31,9 @@ export default function WishlistScreen() {
 
   const openProduct = useCallback(
     (product: ShopifyProduct) => {
-      void trackProductView(product.id);
       navigation.navigate('ProductDetail', { productId: product.id });
     },
-    [navigation, trackProductView],
+    [navigation],
   );
 
   return (

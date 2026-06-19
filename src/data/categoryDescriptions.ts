@@ -1,4 +1,5 @@
 export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  apparel: 'Clothing & wearables',
   accessories: 'Bags, jewelry & small finds',
   art: 'Paintings, prints & wall art',
   'baby-products': 'Gear for little ones',
@@ -12,6 +13,8 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   health: 'Beauty & self-care',
   'holiday-decor': 'Seasonal decorations',
   'home-decor': 'Frames, vases & accents',
+  'home-improvement': 'Tools & home upgrades',
+  collectibles: 'Vintage finds & keepsakes',
   household: 'Everyday home essentials',
   kitchenware: 'Pots, pans, dishes & utensils',
   music: 'Instruments & accessories',

@@ -11,7 +11,12 @@ export {
   shopifyConfig,
 } from './config';
 export { shopifyFetch } from './client';
-export { getCustomerAccountStatus } from './customerAccount';
+export {
+  completeCustomerLogin,
+  getCustomerAuthStatus,
+  logoutCustomer,
+  prepareEmailCodeLoginSession,
+} from './customerAuth';
 export { getProducts } from './products';
 export type {
   CartLine,

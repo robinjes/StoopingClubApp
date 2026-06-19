@@ -8,7 +8,7 @@ export default function ShopReminderBar() {
       className="border-y border-black px-4 py-2.5"
       style={{ backgroundColor: TAN_BAR }}
     >
-      <Text className="text-right text-sm text-black">
+      <Text className="text-center text-sm text-black">
         Happy Stooping! Limit of 10 items per person per week.
       </Text>
     </View>

@@ -9,14 +9,8 @@ export const PICKUP_LOCATIONS: PickupLocationDefinition[] = [
   {
     id: 'berkeley',
     label: 'Berkeley',
-    description: 'North Berkeley pickup',
-    tagMatches: ['Berkeley', 'Pickup: Berkeley'],
-  },
-  {
-    id: 'oakland',
-    label: 'Oakland',
-    description: 'Downtown Oakland pickup',
-    tagMatches: ['Oakland', 'Pickup: Oakland'],
+    description: 'Haas School of Business, UC Berkeley',
+    tagMatches: ['Berkeley', 'Pickup: Berkeley', 'Haas'],
   },
 ];
 

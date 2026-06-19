@@ -22,11 +22,11 @@ export default function DonateScreen() {
           className="text-center text-2xl leading-8 text-gray-900 dark:text-gray-100"
           style={{ fontFamily: 'Georgia' }}
         >
-          Make a Difference With Your Donations at Oakland Stooping
+          Make a Difference With Your Donations at Stooping Club Berkeley
         </Text>
 
         <Text className="mt-5 text-base leading-6 text-gray-600 dark:text-gray-400">
-          Thank you for your interest in donating to Oakland Stooping. As a student-led
+          Thank you for your interest in donating to Stooping Club Berkeley. As a student-led
           organization, we reserve the right to decline anything that&apos;s inappropriate,
           unsafe, or excessively worn. Our capacity is limited, and we prioritize quality over
           quantity to ensure donations are truly usable. If you&apos;re unsure whether something

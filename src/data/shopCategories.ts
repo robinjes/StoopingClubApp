@@ -8,6 +8,12 @@ export type ShopCategoryDefinition = {
 };
 
 export const SHOP_CATEGORIES: ShopCategoryDefinition[] = [
+  {
+    id: 'apparel',
+    label: 'Apparel',
+    collectionHandles: ['apparel-1'],
+    tagMatches: ['Apparel', 'Clothing'],
+  },
   { id: 'accessories', label: 'Accessories', collectionHandles: ['accessories-1'], tagMatches: ['Accessories'] },
   { id: 'art', label: 'Art', collectionHandles: ['art'], tagMatches: ['Art'] },
   { id: 'baby-products', label: 'Baby Products', collectionHandles: ['baby'], tagMatches: ['Baby'] },
@@ -33,6 +39,18 @@ export const SHOP_CATEGORIES: ShopCategoryDefinition[] = [
   },
   { id: 'holiday-decor', label: 'Holiday Decor', collectionHandles: ['holiday-1'], tagMatches: ['Holiday'] },
   { id: 'home-decor', label: 'Home Decor', collectionHandles: ['home-decor'], tagMatches: ['Home Decor'] },
+  {
+    id: 'home-improvement',
+    label: 'Home Improvement',
+    collectionHandles: ['home-improvement-1'],
+    tagMatches: ['Home Improvement'],
+  },
+  {
+    id: 'collectibles',
+    label: 'Collectibles',
+    collectionHandles: ['collectibles-1'],
+    tagMatches: ['Collectibles', 'Collectible'],
+  },
   {
     id: 'household',
     label: 'Household Items',
