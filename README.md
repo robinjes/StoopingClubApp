@@ -1,5 +1,9 @@
 # Stooping Club App
 
+## Description
+
+The Stooping Club Mobile App is a full replica of the Stooping Club Berkeley website. The main functions of the app are to allow the user to order items from the Stooping Club store from the convenience of their phone directly through the app. The app provides a simple and user-friendly experience that helps the customer to easily navigate through the app. When you open the app, you are met with the home page, which provides some information on what Stooping Club is and how they have provided it to the community. Then, you can click on the store button on the navigation bar, which sends you to the grid where you can filter out and check items that you want to order. Then, once you add the item you want to your cart, you go and check out the item from the cart to place your order. Since Stooping Club’s mission is to provide 100% free items to the community, there is no money or transaction required
+
 Mobile app for [Berkeley Stooping Club](https://berkeleystooping.org) — a free community store for preloved household items. Browse inventory, add items to your cart, check out through Shopify, and manage your account.
 
 Built with **Expo** and **React Native** (TypeScript).

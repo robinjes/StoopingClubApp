@@ -26,8 +26,15 @@
               "stoopingclubapp",
               "shop.74832183474.app"
             ]
+          },
+          {
+            "CFBundleURLSchemes": [
+              "stoopingclubapp",
+              "shop.74832183474.app"
+            ]
           }
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "splash": {
         "image": "./assets/stoopylogo.png",
@@ -93,7 +100,19 @@
         }
       ],
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "newArchEnabled": false
+          },
+          "ios": {
+            "newArchEnabled": false
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {
