@@ -7,6 +7,7 @@
       "shop.74832183474.app"
     ],
     "version": "1.0.0",
+    "newArchEnabled": true,
     "orientation": "portrait",
     "icon": "./assets/android-icon-foreground.png",
     "userInterfaceStyle": "automatic",
@@ -21,12 +22,6 @@
       "infoPlist": {
         "NSUserNotificationsUsageDescription": "Stooping Club sends Friday order reminders and Sunday pickup reminders.",
         "CFBundleURLTypes": [
-          {
-            "CFBundleURLSchemes": [
-              "stoopingclubapp",
-              "shop.74832183474.app"
-            ]
-          },
           {
             "CFBundleURLSchemes": [
               "stoopingclubapp",
@@ -105,11 +100,7 @@
         "expo-build-properties",
         {
           "android": {
-            "minSdkVersion": 24,
-            "newArchEnabled": false
-          },
-          "ios": {
-            "newArchEnabled": false
+            "minSdkVersion": 24
           }
         }
       ]
