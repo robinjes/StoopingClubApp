@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
+import { useFeedback } from '../../context/FeedbackContext';
 import { useTheme } from '../../context/ThemeContext';
 
 type ShopSearchBarProps = {
@@ -11,6 +12,7 @@ type ShopSearchBarProps = {
 
 export default function ShopSearchBar({ value, onChangeText, resultCount }: ShopSearchBarProps) {
   const { colors } = useTheme();
+  const { haptic, sound } = useFeedback();
   const hasQuery = value.trim().length > 0;
 
   return (
@@ -38,7 +40,11 @@ export default function ShopSearchBar({ value, onChangeText, resultCount }: Shop
             accessibilityRole="button"
             accessibilityLabel="Clear search"
             className="absolute bottom-0 right-10 top-0 justify-center px-2"
-            onPress={() => onChangeText('')}
+            onPress={() => {
+              haptic('selection');
+              sound('pop');
+              onChangeText('');
+            }}
           >
             <Ionicons name="close-circle" size={18} color={colors.textMuted} />
           </Pressable>

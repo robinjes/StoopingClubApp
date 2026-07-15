@@ -21,12 +21,15 @@ export type ShopifyProduct = {
   id: string;
   title: string;
   description: string;
+  descriptionHtml?: string;
   handle: string;
   tags: string[];
   createdAt: string;
   images: ShopifyImage[];
   price: ShopifyMoney;
   compareAtPrice: ShopifyMoney | null;
+  /** Estimated retail value in major currency units, when available. */
+  estRetailValue: number | null;
   inventoryQuantity: number;
   variants: ShopifyProductVariant[];
 };
@@ -58,12 +61,19 @@ export type ShopifyProductNode = {
   id: string;
   title: string;
   description: string;
+  descriptionHtml?: string;
   handle: string;
   tags: string[];
   createdAt: string;
   images: {
     edges: Array<{ node: ShopifyImage }>;
   };
+  metafields?: Array<{
+    namespace: string;
+    key: string;
+    value: string;
+    type: string;
+  } | null>;
   variants: {
     edges: Array<{
       node: {

@@ -12,3 +12,8 @@ export function formatPrice(money: ShopifyMoney): string {
     currency: money.currencyCode,
   }).format(amount);
 }
+
+/** Matches the web cart, e.g. "$75.00 USD". */
+export function formatPriceWithCode(money: ShopifyMoney): string {
+  return `${formatPrice(money)} ${money.currencyCode}`;
+}

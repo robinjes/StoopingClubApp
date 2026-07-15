@@ -9,6 +9,7 @@ type ProductStore = {
   error: string | null;
   setProducts: (products: ShopifyProduct[]) => void;
   appendProducts: (products: ShopifyProduct[]) => void;
+  setProductEstRetailValue: (productId: string, estRetailValue: number) => void;
   setLoading: (isLoading: boolean) => void;
   setLoadingMore: (isLoadingMore: boolean) => void;
   setError: (error: string | null) => void;
@@ -26,6 +27,12 @@ export const useProductStore = create<ProductStore>((set) => ({
       const newProducts = products.filter((product) => !existingIds.has(product.id));
       return { products: [...state.products, ...newProducts] };
     }),
+  setProductEstRetailValue: (productId, estRetailValue) =>
+    set((state) => ({
+      products: state.products.map((product) =>
+        product.id === productId ? { ...product, estRetailValue } : product,
+      ),
+    })),
   setLoading: (isLoading) => set({ isLoading }),
   setLoadingMore: (isLoadingMore) => set({ isLoadingMore }),
   setError: (error) => set({ error }),

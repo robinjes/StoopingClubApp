@@ -4,14 +4,18 @@ import { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import StreakButton from '../streak/StreakButton';
 import AccountDropdown from './AccountDropdown';
 import CustomerAvatar from './CustomerAvatar';
-import DevNotificationTestButtons from './DevNotificationTestButtons';
+import CartIconButton from '../feedback/CartIconButton';
+import { useFeedback } from '../../context/FeedbackContext';
 import { useCart } from '../../context/CartContext';
 import { useCustomer } from '../../context/CustomerContext';
 import { useOverlay } from '../../context/OverlayContext';
 import { useTheme } from '../../context/ThemeContext';
-import { navigateToHomeTab } from '../../navigation/rootNavigation';
+import { navigateToShopTab } from '../../navigation/rootNavigation';
+
+const HEADER_GREEN = '#00553A';
 
 type AppNavbarProps = {
   showBack?: boolean;
@@ -25,6 +29,7 @@ export default function AppNavbar({ showBack = false, onBack }: AppNavbarProps) 
   const insets = useSafeAreaInsets();
   const { itemCount } = useCart();
   const { isAuthenticated, profile } = useCustomer();
+  const { haptic } = useFeedback();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   function handleBack() {
@@ -35,104 +40,86 @@ export default function AppNavbar({ showBack = false, onBack }: AppNavbarProps) 
     navigation.goBack();
   }
 
-  function handleGoHome() {
+  function handleGoShop() {
     closeOverlay();
-    navigateToHomeTab();
+    navigateToShopTab();
   }
 
   return (
-    <View
-      className="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
-      style={{ paddingTop: insets.top, borderBottomColor: colors.border, backgroundColor: colors.background }}
-    >
-      <View className="h-14 flex-row items-center px-4">
-        <View className="min-w-0 flex-1 flex-row items-center gap-2">
-          {showBack ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              className="p-1"
-              onPress={handleBack}
-            >
-              <Ionicons name="chevron-back" size={22} color={colors.text} />
-            </Pressable>
-          ) : null}
+    <View style={{ backgroundColor: HEADER_GREEN }}>
+      <View
+        style={{
+          paddingTop: insets.top,
+          paddingHorizontal: 16,
+          paddingBottom: 10,
+        }}
+      >
+        <View className="min-h-[44px] flex-row items-center justify-between">
+          <View className="min-w-[88px] flex-row items-center gap-1">
+            {showBack ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+                className="p-1"
+                onPress={handleBack}
+              >
+                <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+              </Pressable>
+            ) : null}
+            <StreakButton light />
+          </View>
+
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Go to home"
-            onPress={handleGoHome}
+            accessibilityLabel="Go to shop"
+            onPress={handleGoShop}
+            className="flex-row items-center gap-2"
           >
             <Image
-              source={require('../../../assets/stoopylogo.png')}
-              className="h-9 w-9"
+              source={require('../../../assets/stoopingclublogo.png')}
+              className="h-8 w-8"
               resizeMode="contain"
               accessibilityLabel="Stooping Club"
             />
+            <Text
+              numberOfLines={1}
+              className="text-base font-bold text-white"
+              style={{ fontFamily: 'Georgia' }}
+            >
+              Stooping Club
+            </Text>
           </Pressable>
-          {__DEV__ && !showBack ? <DevNotificationTestButtons /> : null}
+
+          <View className="min-w-[88px] flex-row items-center justify-end gap-2">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Account"
+              className="p-0.5"
+              onPress={() => setAccountMenuOpen(true)}
+            >
+              {isAuthenticated && profile ? (
+                <CustomerAvatar profile={profile} colors={colors} size={28} />
+              ) : (
+                <Ionicons name="person-outline" size={22} color="#FFFFFF" />
+              )}
+            </Pressable>
+
+            <CartIconButton
+              itemCount={itemCount}
+              onPress={() => {
+                haptic('selection');
+                openOverlay('cart');
+              }}
+            />
+          </View>
         </View>
 
-        <Text
-          pointerEvents="none"
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.85}
-          className="shrink px-3 text-center text-lg font-semibold"
-          style={{ fontFamily: 'Georgia', color: colors.brandDark }}
-        >
-          Stooping Club
-        </Text>
-
-        <View className="min-w-0 flex-1 flex-row items-center justify-end gap-3">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Contact us"
-            className="p-1"
-            onPress={() => openOverlay('contact')}
-          >
-            <Ionicons name="mail-outline" size={22} color={colors.brand} />
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Account"
-            className="p-0.5"
-            onPress={() => setAccountMenuOpen(true)}
-          >
-            {isAuthenticated && profile ? (
-              <CustomerAvatar profile={profile} colors={colors} size={30} />
-            ) : (
-              <Ionicons name="person-outline" size={22} color={colors.brand} />
-            )}
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Cart"
-            className="p-1"
-            onPress={() => openOverlay('cart')}
-          >
-            <View>
-              <Ionicons name="cart-outline" size={22} color={colors.brand} />
-              {itemCount > 0 ? (
-                <View
-                  className="absolute -right-2 -top-1 min-w-[16px] items-center rounded-full px-1"
-                  style={{ backgroundColor: colors.brand }}
-                >
-                  <Text className="text-[10px] font-semibold text-white">
-                    {itemCount > 9 ? '9+' : itemCount}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          </Pressable>
-        </View>
       </View>
 
       <AccountDropdown
         visible={accountMenuOpen}
         onClose={() => setAccountMenuOpen(false)}
-        anchorTop={insets.top + 56}
+        anchorTop={insets.top + 54}
         anchorRight={16}
       />
     </View>

@@ -1,7 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
+import { useRef } from 'react';
+import { Image, Text, View } from 'react-native';
 
-import { useWishlist } from '../../hooks/useWishlist';
+import AddToCartButton from '../feedback/AddToCartButton';
+import AnimatedPressable from '../feedback/AnimatedPressable';
 import type { ShopifyProduct } from '../../types/shopify';
 import { useTheme } from '../../context/ThemeContext';
 import { formatPrice } from '../../utils/formatPrice';
@@ -9,7 +10,7 @@ import { formatPrice } from '../../utils/formatPrice';
 type ProductCardProps = {
   product: ShopifyProduct;
   onPress?: (product: ShopifyProduct) => void;
-  onAddToCart?: (product: ShopifyProduct) => void;
+  onAddToCart?: (product: ShopifyProduct) => void | Promise<void>;
   isAdding?: boolean;
 };
 
@@ -20,17 +21,18 @@ export default function ProductCard({
   isAdding = false,
 }: ProductCardProps) {
   const { colors } = useTheme();
+  const imageRef = useRef<View>(null);
   const imageUrl = product.images[0]?.url;
   const canAdd = Boolean(onAddToCart);
-  const { isWishlisted, toggle } = useWishlist();
-  const wished = isWishlisted(product.id);
 
   return (
-    <Pressable
+    <AnimatedPressable
+      haptic="selection"
+      pressedScale={0.98}
       className="overflow-hidden rounded-2xl border border-gray-100 bg-white dark:bg-gray-950"
       onPress={() => onPress?.(product)}
     >
-      <View className="aspect-square w-full bg-gray-100 dark:bg-gray-800">
+      <View ref={imageRef} className="aspect-square w-full bg-gray-100 dark:bg-gray-800">
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} className="h-full w-full" resizeMode="cover" />
         ) : (
@@ -38,51 +40,35 @@ export default function ProductCard({
             <Text className="text-xs text-gray-400">No image</Text>
           </View>
         )}
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={wished ? 'Remove from wishlist' : 'Add to wishlist'}
-          className="absolute right-2 top-2 h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-gray-950/90"
-          onPress={(event) => {
-            event.stopPropagation();
-            void toggle(product.id);
-          }}
-        >
-          <Ionicons
-            name={wished ? 'heart' : 'heart-outline'}
-            size={18}
-            color={wished ? '#DC2626' : colors.textMuted}
-          />
-        </Pressable>
       </View>
 
       <View className="p-3">
         <Text className="text-sm font-medium leading-5 text-gray-900 dark:text-gray-100" numberOfLines={2}>
           {product.title}
         </Text>
-        <View className="mt-2 flex-row items-center justify-between gap-2">
-          <Text className="text-sm font-semibold" style={{ color: colors.brand }}>
-            {formatPrice(product.price)}
-          </Text>
-          {canAdd ? (
-            <Pressable
-              className="rounded-full px-3 py-1.5"
-              style={{ backgroundColor: colors.brand }}
-              disabled={isAdding}
-              onPress={(event) => {
-                event.stopPropagation();
-                onAddToCart?.(product);
-              }}
-            >
-              {isAdding ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text className="text-xs font-semibold text-white">Add</Text>
-              )}
-            </Pressable>
+        <View className="mt-2 flex-row items-end justify-between gap-2">
+          <View className="min-w-0 flex-1">
+            <Text className="text-sm font-semibold" style={{ color: colors.brand }}>
+              {formatPrice(product.price)}
+            </Text>
+            {product.estRetailValue != null && product.estRetailValue > 0 ? (
+              <Text className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+                Est. retail {formatPrice({ amount: String(product.estRetailValue), currencyCode: 'USD' })}
+              </Text>
+            ) : null}
+          </View>
+          {canAdd && onAddToCart ? (
+            <AddToCartButton
+              product={product}
+              onAdd={onAddToCart}
+              isAdding={isAdding}
+              sourceRef={imageRef}
+              compact
+              backgroundColor={colors.brand}
+            />
           ) : null}
         </View>
       </View>
-    </Pressable>
+    </AnimatedPressable>
   );
 }

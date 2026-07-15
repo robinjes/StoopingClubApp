@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 
-export type OverlayScreen = 'cart' | 'donate' | 'contact' | 'account';
+export type OverlayScreen = 'cart' | 'donate' | 'contact' | 'account' | 'about' | 'involved';
 
 export type AccountRoute = 'SignInShop' | 'Orders' | 'Profile';
 
@@ -19,6 +19,9 @@ type OverlayContextValue = {
   closeOverlay: () => void;
 };
 
+import { haptics } from '../services/feedback/haptics';
+import { playSound } from '../services/feedback/sounds';
+
 const OverlayContext = createContext<OverlayContextValue | null>(null);
 
 export function OverlayProvider({ children }: { children: ReactNode }) {
@@ -26,15 +29,18 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
   const [accountRoute, setAccountRoute] = useState<AccountRoute>('SignInShop');
 
   const openOverlay = useCallback((screen: OverlayScreen) => {
+    haptics.light();
     setOverlay(screen);
   }, []);
 
   const openAccount = useCallback((route: AccountRoute) => {
+    haptics.light();
     setAccountRoute(route);
     setOverlay('account');
   }, []);
 
   const closeOverlay = useCallback(() => {
+    haptics.selection();
     setOverlay(null);
   }, []);
 

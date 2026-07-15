@@ -32,16 +32,13 @@ Four browse modes, switchable from the shop toolbar:
 - **New** — new arrivals
 
 ### Cart & checkout
-- Add to cart from grid, collections, stroll, wishlist, and product detail
+- Add to cart from grid, collections, stroll, and product detail
 - Checkout opens Shopify checkout in an in-app WebView
 - Order confirmation message + local notification after checkout
 
 ### Account
 - **Profile** opens the hosted Shopify customer account (`account.berkeleystooping.org/orders`) in a WebView
 - Theme toggle (light / dark) in the account menu
-
-### Wishlist
-- Save items locally; badge on the tab bar
 
 ### Notifications
 - Friday order reminder and Sunday pickup reminder (scheduled on device)
@@ -128,7 +125,7 @@ src/
 
 ## Navigation
 
-**Primary tabs:** Home · Shop · Wishlist · Donate · About Us · Get Involved
+**Primary tabs:** Home · Shop · Donate · About Us · Get Involved
 
 **Overlays** (slide over tabs, tab bar stays visible): Cart · Donate · Contact · Account
 

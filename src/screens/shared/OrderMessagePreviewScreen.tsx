@@ -4,12 +4,12 @@ import { ScrollView, Text, View } from 'react-native';
 
 import OrderMessageCard from '../../components/order/OrderMessageCard';
 import ScreenLayout from '../../components/layout/ScreenLayout';
-import type { HomeStackParamList } from '../../navigation/stacks/HomeStack';
+import type { ShopStackParamList } from '../../navigation/stacks/ShopStack';
 import { useTheme } from '../../context/ThemeContext';
 import { buildOrderMessage } from '../../utils/orderMessage';
 
 type OrderMessagePreviewScreenProps = NativeStackScreenProps<
-  HomeStackParamList,
+  ShopStackParamList,
   'OrderMessagePreview'
 >;
 

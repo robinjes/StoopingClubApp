@@ -1,127 +1,217 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import {
+  FlatList,
+  Image,
+  Pressable,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 
 import { useRecentlyViewed } from '../../hooks/useRecentlyViewed';
+import { useOpenProduct } from '../../hooks/useOpenProduct';
+import { useAddToCart } from '../../hooks/useAddToCart';
+import type { ShopCategoryDefinition } from '../../data/shopCategories';
 import type { ShopifyCollection, ShopifyProduct } from '../../types/shopify';
+import { useTheme } from '../../context/ThemeContext';
 import {
-  filterProductsByCategories,
-  getCategoryById,
-  getCategoryProductCount,
+  filterProductsByCategory,
+  getTopLevelCategories,
 } from '../../utils/categoryFilters';
-import { filterProductsByLocations } from '../../utils/locationFilters';
-import CollectionFilterBar from './CollectionFilterBar';
-import CollectionFilterSheet, {
-  EMPTY_COLLECTION_FILTERS,
-  type CollectionFilters,
-} from './CollectionFilterSheet';
+import { getCategoryIcon } from '../../data/categoryIcons';
 import ProductGrid from './ProductGrid';
 
 type CollectionsViewProps = {
   collections: ShopifyCollection[];
   products: ShopifyProduct[];
   initialCategoryId?: string | null;
-  onProductPress?: (product: ShopifyProduct) => void;
-  onAddToCart?: (product: ShopifyProduct) => void;
-  addingProductId?: string | null;
-  emptyMessage?: string;
 };
+
+type CollectionCard = {
+  category: ShopCategoryDefinition;
+  count: number;
+  imageUrl: string | null;
+};
+
+function resolveCollectionImage(
+  category: ShopCategoryDefinition,
+  collections: ShopifyCollection[],
+  categoryProducts: ShopifyProduct[],
+): string | null {
+  for (const handle of category.collectionHandles ?? []) {
+    const collection = collections.find((item) => item.handle === handle);
+    if (collection?.image?.url) {
+      return collection.image.url;
+    }
+  }
+
+  return categoryProducts[0]?.images[0]?.url ?? null;
+}
 
 export default function CollectionsView({
   collections,
   products,
   initialCategoryId = null,
-  onProductPress,
-  onAddToCart,
-  addingProductId = null,
-  emptyMessage,
 }: CollectionsViewProps) {
-  const [filters, setFilters] = useState<CollectionFilters>({
-    locationIds: [],
-    categoryIds: initialCategoryId ? [initialCategoryId] : [],
-  });
-  const [filterSheetVisible, setFilterSheetVisible] = useState(false);
+  const { colors } = useTheme();
+  const { width } = useWindowDimensions();
   const { recentProductIds } = useRecentlyViewed();
+  const openProduct = useOpenProduct();
+  const { handleAddToCart, addingProductId } = useAddToCart();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(initialCategoryId);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (initialCategoryId) {
-      setFilters((current) => ({ ...current, categoryIds: [initialCategoryId] }));
+      setSelectedCategoryId(initialCategoryId);
     }
   }, [initialCategoryId]);
 
-  useEffect(() => {
-    setFilters((current) => {
-      const validCategoryIds = current.categoryIds.filter((categoryId) => {
-        const category = getCategoryById(categoryId);
-        if (!category) {
-          return false;
-        }
+  const cards = useMemo(() => {
+    const result: CollectionCard[] = [];
 
-        const locationScopedProducts = filterProductsByLocations(products, current.locationIds);
-        return (
-          getCategoryProductCount(
-            locationScopedProducts,
-            category,
-            collections,
-            recentProductIds,
-          ) > 0
-        );
-      });
-
-      if (
-        validCategoryIds.length === current.categoryIds.length &&
-        validCategoryIds.every((id, index) => id === current.categoryIds[index])
-      ) {
-        return current;
+    for (const category of getTopLevelCategories()) {
+      if (category.special === 'uncategorized') {
+        continue;
       }
 
-      return { ...current, categoryIds: validCategoryIds };
-    });
-  }, [collections, filters.locationIds, filters.categoryIds, products, recentProductIds]);
+      const categoryProducts = filterProductsByCategory(
+        products,
+        category,
+        collections,
+        recentProductIds,
+      );
+      const count = categoryProducts.length;
+      if (count === 0) {
+        continue;
+      }
 
-  const filteredProducts = useMemo(() => {
-    const locationFiltered = filterProductsByLocations(products, filters.locationIds);
+      result.push({
+        category,
+        count,
+        imageUrl: resolveCollectionImage(category, collections, categoryProducts),
+      });
+    }
 
-    return filterProductsByCategories(
-      locationFiltered,
-      filters.categoryIds,
-      collections,
-      recentProductIds,
-    );
-  }, [collections, filters.categoryIds, filters.locationIds, products, recentProductIds]);
+    return result;
+  }, [collections, products, recentProductIds]);
 
-  const activeFilterCount = filters.locationIds.length + filters.categoryIds.length;
-
-  const header = (
-    <View className="pb-2">
-      <CollectionFilterBar
-        filters={filters}
-        activeCount={activeFilterCount}
-        onPress={() => setFilterSheetVisible(true)}
-        onClear={() => setFilters(EMPTY_COLLECTION_FILTERS)}
-      />
-    </View>
+  const selectedCategory = useMemo(
+    () => cards.find((card) => card.category.id === selectedCategoryId)?.category ?? null,
+    [cards, selectedCategoryId],
   );
 
-  return (
-    <>
-      <ProductGrid
-        products={filteredProducts}
-        ListHeaderComponent={header}
-        onAddToCart={onAddToCart}
-        addingProductId={addingProductId}
-        onProductPress={onProductPress}
-        emptyMessage={emptyMessage}
-      />
+  const selectedProducts = useMemo(() => {
+    if (!selectedCategory) {
+      return [];
+    }
 
-      <CollectionFilterSheet
-        visible={filterSheetVisible}
-        products={products}
-        collections={collections}
-        recentProductIds={recentProductIds}
-        filters={filters}
-        onClose={() => setFilterSheetVisible(false)}
-        onApply={setFilters}
-      />
-    </>
+    return filterProductsByCategory(products, selectedCategory, collections, recentProductIds);
+  }, [collections, products, recentProductIds, selectedCategory]);
+
+  const PAGE_SIZE = 24;
+  const totalPages = Math.max(1, Math.ceil(selectedProducts.length / PAGE_SIZE));
+  const pageProducts = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return selectedProducts.slice(start, start + PAGE_SIZE);
+  }, [page, selectedProducts]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCategoryId]);
+
+  const cardWidth = (width - 32 - 12) / 2;
+
+  if (selectedCategory) {
+    return (
+      <View className="flex-1">
+        <View className="flex-row items-center gap-2 px-4 pb-3 pt-1">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to collections"
+            onPress={() => setSelectedCategoryId(null)}
+            className="flex-row items-center gap-1 rounded-full px-2 py-1"
+          >
+            <Ionicons name="chevron-back" size={18} color={colors.brand} />
+            <Text className="text-sm font-semibold" style={{ color: colors.brand }}>
+              Collections
+            </Text>
+          </Pressable>
+          <Text className="flex-1 text-right text-sm font-medium" style={{ color: colors.text }}>
+            {selectedCategory.label} · {selectedProducts.length}
+          </Text>
+        </View>
+
+        <ProductGrid
+          products={pageProducts}
+          onProductPress={openProduct}
+          onAddToCart={handleAddToCart}
+          addingProductId={addingProductId}
+          emptyMessage="No in-stock products in this collection yet."
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={cards}
+      keyExtractor={(item) => item.category.id}
+      numColumns={2}
+      showsVerticalScrollIndicator={false}
+      contentContainerClassName="gap-3 px-4 pb-8 pt-1"
+      columnWrapperClassName="gap-3"
+      ListHeaderComponent={
+        <Text className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+          {cards.length} collection{cards.length === 1 ? '' : 's'}
+        </Text>
+      }
+      ListEmptyComponent={
+        <View className="items-center px-6 py-12">
+          <Text className="text-center text-sm text-gray-500 dark:text-gray-400">
+            No collections with in-stock items yet.
+          </Text>
+        </View>
+      }
+      renderItem={({ item }) => (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${item.category.label}, ${item.count} items`}
+          onPress={() => setSelectedCategoryId(item.category.id)}
+          style={{ width: cardWidth }}
+          className="overflow-hidden rounded-2xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-950"
+        >
+          <View className="aspect-[4/3] w-full bg-gray-100 dark:bg-gray-800">
+            {item.imageUrl ? (
+              <Image source={{ uri: item.imageUrl }} className="h-full w-full" resizeMode="cover" />
+            ) : (
+              <View className="h-full w-full items-center justify-center">
+                <Ionicons
+                  name={getCategoryIcon(item.category.id)}
+                  size={36}
+                  color={colors.brand}
+                />
+              </View>
+            )}
+          </View>
+          <View className="px-3 py-3">
+            <Text
+              className="text-sm font-semibold leading-5"
+              style={{ color: colors.text }}
+              numberOfLines={2}
+            >
+              {item.category.label}
+            </Text>
+            <Text className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {item.count} item{item.count === 1 ? '' : 's'}
+            </Text>
+          </View>
+        </Pressable>
+      )}
+    />
   );
 }

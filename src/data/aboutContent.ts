@@ -1,10 +1,8 @@
-export const ABOUT_TAGLINE = 'Spend Less, Save Earth™';
-
 export const ABOUT_DESCRIPTION =
-  'Stooping Club is the world\u2019s first free online chain store. We offer new and preloved household items at no cost to promote sustainability and community sharing.';
+  "Stooping Club is the world's first free online chain store. We offer new and preloved household items at no cost to promote sustainability and community sharing.";
 
 export const ABOUT_VISION =
-  'To transform society\u2019s throwaway culture into a reuse culture and build a circular economy.';
+  "To transform society's throwaway culture into a reuse culture and build a circular economy.";
 
 export const ABOUT_MISSION =
   'To give useful items a second life by making reuse free and accessible for everyone.';
@@ -31,14 +29,14 @@ export const ABOUT_MILESTONES: AboutMilestone[] = [
     date: 'October 20, 2023',
     title: 'Our First Branch',
     description:
-      'We launch the world\u2019s first free online store. Stooping Club helps people save money, reduce landfill waste, and live more sustainably through our one-stop shop.',
+      "We launch the world's first free online store. Stooping Club helps people save money, reduce landfill waste, and live more sustainably through our one-stop shop.",
   },
   {
     id: 'first-store',
     date: 'October 20, 2023',
     title: 'Our First Free Online Store',
     description:
-      'We launch the world\u2019s first free online store. Stooping Club helps people save money and reduce landfill waste through our one-stop shop.',
+      "We launch the world's first free online store. Stooping Club helps people save money and reduce landfill waste through our one-stop shop.",
   },
   {
     id: 'cougar-cages',

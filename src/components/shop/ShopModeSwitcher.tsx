@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useTheme } from '../../context/ThemeContext';
 
-export type ShopMode = 'grid' | 'collections' | 'stroll' | 'newArrivals';
+export type ShopMode = 'grid' | 'collections' | 'stroll';
 
 type ShopModeOption = {
   id: ShopMode;
@@ -17,12 +17,6 @@ const MODES: ShopModeOption[] = [
   { id: 'grid', label: 'Grid', icon: 'grid-outline' },
   { id: 'collections', label: 'Collections', icon: 'layers-outline' },
   { id: 'stroll', label: 'Stroll', icon: 'shuffle-outline' },
-  {
-    id: 'newArrivals',
-    label: 'New',
-    accessibilityLabel: 'New Arrivals',
-    icon: 'sparkles-outline',
-  },
 ];
 
 type ShopModeSwitcherProps = {

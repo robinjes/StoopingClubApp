@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { useCustomer } from '../../context/CustomerContext';
+import { useFeedback } from '../../context/FeedbackContext';
 import { useOverlay } from '../../context/OverlayContext';
 import { useTheme } from '../../context/ThemeContext';
 import type { AccountStackParamList } from '../../navigation/stacks/AccountStack';
@@ -18,6 +19,7 @@ type ProfileNavigation = NativeStackNavigationProp<AccountStackParamList, 'Profi
 export default function AccountProfileScreen() {
   const { colors } = useTheme();
   const { closeOverlay } = useOverlay();
+  const { soundsEnabled, setSoundsEnabled } = useFeedback();
   const navigation = useNavigation<ProfileNavigation>();
   const { isConfigured, logout, error: contextError } = useCustomer();
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
@@ -107,6 +109,28 @@ export default function AccountProfileScreen() {
 
         {!isLoading && profile ? (
           <View className="mt-6">
+            <View
+              className="mb-4 rounded-3xl border px-5 py-4"
+              style={{ borderColor: colors.border, backgroundColor: colors.background }}
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 pr-4">
+                  <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+                    UI sounds
+                  </Text>
+                  <Text className="mt-1 text-xs leading-5" style={{ color: colors.textMuted }}>
+                    Subtle taps, swooshes, and chimes. Respects silent mode.
+                  </Text>
+                </View>
+                <Switch
+                  value={soundsEnabled}
+                  onValueChange={setSoundsEnabled}
+                  trackColor={{ false: colors.border, true: colors.brand }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            </View>
+
             <View
               className="rounded-3xl border px-5 py-6"
               style={{ borderColor: colors.border, backgroundColor: colors.background }}

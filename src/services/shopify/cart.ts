@@ -1,5 +1,10 @@
 import { shopifyFetch } from './client';
 import type { ShopifyCart } from './types';
+import {
+  moneyAmount,
+  parseEstRetailAmount,
+  parseMetafieldMoney,
+} from '../../utils/estRetailValue';
 
 const CART_FIELDS = `
   id
@@ -28,8 +33,27 @@ const CART_FIELDS = `
               amount
               currencyCode
             }
+            compareAtPrice {
+              amount
+              currencyCode
+            }
             product {
               title
+              handle
+              description
+              descriptionHtml
+              metafields(identifiers: [
+                { namespace: "custom", key: "typical_retail_value_estimate" }
+                { namespace: "custom", key: "est_retail_value" }
+                { namespace: "custom", key: "estimated_retail_value" }
+                { namespace: "custom", key: "retail_value" }
+                { namespace: "custom", key: "est_retail" }
+              ]) {
+                namespace
+                key
+                value
+                type
+              }
             }
           }
         }
@@ -119,12 +143,50 @@ type CartNode = {
           title: string;
           image?: { url: string; altText?: string | null } | null;
           price: { amount: string; currencyCode: string };
-          product: { title: string };
+          compareAtPrice?: { amount: string; currencyCode: string } | null;
+          product: {
+            title: string;
+            handle?: string;
+            description?: string;
+            descriptionHtml?: string;
+            metafields?: Array<{
+              namespace: string;
+              key: string;
+              value: string;
+              type: string;
+            } | null>;
+          };
         };
       };
     }>;
   };
 };
+
+function resolveLineEstRetail(
+  merchandise: CartNode['lines']['edges'][number]['node']['merchandise'],
+): number | null {
+  const metafields = merchandise.product.metafields?.filter(Boolean) ?? [];
+  for (const field of metafields) {
+    if (!field) {
+      continue;
+    }
+    const money = parseMetafieldMoney(field.value, merchandise.price.currencyCode);
+    if (money) {
+      return moneyAmount(money);
+    }
+  }
+
+  const fromDescription = parseEstRetailAmount(
+    merchandise.product.descriptionHtml,
+    merchandise.product.description,
+  );
+  if (fromDescription != null) {
+    return fromDescription;
+  }
+
+  const compareAmount = moneyAmount(merchandise.compareAtPrice);
+  return compareAmount > 0 ? compareAmount : null;
+}
 
 function mapCart(node: CartNode | null): ShopifyCart | null {
   if (!node) {
@@ -143,6 +205,8 @@ function mapCart(node: CartNode | null): ShopifyCart | null {
       title: line.merchandise.product.title || line.merchandise.title,
       imageUrl: line.merchandise.image?.url ?? null,
       price: line.merchandise.price,
+      estRetailValue: resolveLineEstRetail(line.merchandise),
+      productHandle: line.merchandise.product.handle ?? null,
     })),
   };
 }

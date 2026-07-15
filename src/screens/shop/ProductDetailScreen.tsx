@@ -1,9 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Pressable,
   ScrollView,
@@ -12,10 +10,10 @@ import {
   View,
 } from 'react-native';
 
+import AddToCartButton from '../../components/feedback/AddToCartButton';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { useAddToCart } from '../../hooks/useAddToCart';
 import { useRecentlyViewed } from '../../hooks/useRecentlyViewed';
-import { useWishlist } from '../../hooks/useWishlist';
 import type { ShopStackParamList } from '../../navigation/stacks/ShopStack';
 import { useProductStore } from '../../store/productStore';
 import { useTheme } from '../../context/ThemeContext';
@@ -33,8 +31,8 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
   );
   const { handleAddToCart, addingProductId } = useAddToCart();
   const { trackProductView } = useRecentlyViewed();
-  const { isWishlisted, toggle } = useWishlist();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const imageRef = useRef<View>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -75,6 +73,7 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
 
         <View className="bg-white dark:bg-gray-950 px-4 pb-6">
           <View
+            ref={imageRef}
             className="items-center justify-center overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800"
             style={{ height: width * 0.85 }}
           >
@@ -116,33 +115,23 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
         </View>
 
         <View className="mt-3 bg-white dark:bg-gray-950 px-4 py-6">
-          <View className="flex-row items-start justify-between gap-3">
-            <Text
-              className="flex-1 text-2xl text-brand"
-              style={{ fontFamily: 'Georgia', color: colors.brand }}
-            >
-              {product.title}
-            </Text>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={
-                isWishlisted(product.id) ? 'Remove from wishlist' : 'Add to wishlist'
-              }
-              className="h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-800"
-              onPress={() => void toggle(product.id)}
-            >
-              <Ionicons
-                name={isWishlisted(product.id) ? 'heart' : 'heart-outline'}
-                size={22}
-                color={isWishlisted(product.id) ? '#DC2626' : colors.textMuted}
-              />
-            </Pressable>
-          </View>
+          <Text
+            className="text-2xl text-brand"
+            style={{ fontFamily: 'Georgia', color: colors.brand }}
+          >
+            {product.title}
+          </Text>
 
           <Text className="mt-3 text-2xl font-semibold text-gray-900 dark:text-gray-100">
             {formatPrice(product.price)}
           </Text>
+
+          {product.estRetailValue != null && product.estRetailValue > 0 ? (
+            <Text className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Est. retail value:{' '}
+              {formatPrice({ amount: String(product.estRetailValue), currencyCode: 'USD' })}
+            </Text>
+          ) : null}
 
           <Text className="mt-2 text-sm text-gray-500 dark:text-gray-400">Local pickup only</Text>
 
@@ -153,23 +142,26 @@ export default function ProductDetailScreen({ route }: ProductDetailScreenProps)
             </Text>
           </Text>
 
-          <Pressable
-            className="mt-5 items-center rounded-full py-4"
-            style={{
-              backgroundColor: colors.brand,
-              opacity: isSoldOut ? 0.5 : 1,
-            }}
-            disabled={isSoldOut || isAdding}
-            onPress={() => void handleAddToCart(product)}
-          >
-            {isAdding ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text className="text-sm font-bold tracking-wide text-white">
-                {isSoldOut ? 'SOLD OUT' : 'ADD TO CART'}
-              </Text>
-            )}
-          </Pressable>
+          {!isSoldOut ? (
+            <View className="mt-5">
+              <AddToCartButton
+                product={product}
+                onAdd={handleAddToCart}
+                isAdding={isAdding}
+                sourceRef={imageRef}
+                label="ADD TO CART"
+                fullWidth
+                backgroundColor={colors.brand}
+              />
+            </View>
+          ) : (
+            <View
+              className="mt-5 items-center rounded-full py-4 opacity-50"
+              style={{ backgroundColor: colors.brand }}
+            >
+              <Text className="text-sm font-bold tracking-wide text-white">SOLD OUT</Text>
+            </View>
+          )}
 
           <Text className="mt-5 text-sm text-gray-600 dark:text-gray-400">
             Category: <Text className="font-medium text-gray-800 dark:text-gray-200">{category}</Text>

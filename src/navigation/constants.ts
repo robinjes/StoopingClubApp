@@ -1,3 +1,7 @@
-export const TAB_BAR_HEIGHT = 72;
+export const TAB_BAR_HEIGHT = 64;
 
-export const PRIMARY_TAB_NAMES = new Set(['HomeTab', 'ShopTab', 'WishlistTab']);
+/** Stoopy size inside the bottom bar (fully contained). */
+export const STOOPY_SIZE = 48;
+
+/** Visible bar height excluding safe-area inset. */
+export const STOOPY_BAR_HEIGHT = 72;

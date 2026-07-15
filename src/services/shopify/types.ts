@@ -31,6 +31,8 @@ export type CartLine = {
   title: string;
   imageUrl: string | null;
   price: ShopifyMoney;
+  estRetailValue?: number | null;
+  productHandle?: string | null;
 };
 
 export type ShopifyCart = {

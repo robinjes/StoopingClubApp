@@ -1,14 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useMemo } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { getCategoryDescription } from '../../data/categoryDescriptions';
 import { getCategoryIcon } from '../../data/categoryIcons';
@@ -21,7 +13,7 @@ import {
   getRecentCategory,
   getTopLevelCategories,
 } from '../../utils/categoryFilters';
-import { getLocationProductCount, filterProductsByLocations } from '../../utils/locationFilters';
+import { filterProductsByLocations, getLocationProductCount } from '../../utils/locationFilters';
 
 export type CollectionFilters = {
   locationIds: string[];
@@ -34,13 +26,11 @@ export const EMPTY_COLLECTION_FILTERS: CollectionFilters = {
 };
 
 type CollectionFilterSheetProps = {
-  visible: boolean;
   products: ShopifyProduct[];
   collections: ShopifyCollection[];
   recentProductIds: string[];
   filters: CollectionFilters;
-  onClose: () => void;
-  onApply: (filters: CollectionFilters) => void;
+  onChange: (filters: CollectionFilters) => void;
 };
 
 type FilterOption = {
@@ -178,56 +168,41 @@ export function getFilterSummary(filters: CollectionFilters): string {
 }
 
 export default function CollectionFilterSheet({
-  visible,
   products,
   collections,
   recentProductIds,
   filters,
-  onClose,
-  onApply,
+  onChange,
 }: CollectionFilterSheetProps) {
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
-  const [pendingLocationIds, setPendingLocationIds] = useState(filters.locationIds);
-  const [pendingCategoryIds, setPendingCategoryIds] = useState(filters.categoryIds);
-
-  useEffect(() => {
-    if (visible) {
-      setPendingLocationIds(filters.locationIds);
-      setPendingCategoryIds(filters.categoryIds);
-    }
-  }, [filters.categoryIds, filters.locationIds, visible]);
-
   const locationScopedProducts = useMemo(
-    () => filterProductsByLocations(products, pendingLocationIds),
-    [pendingLocationIds, products],
+    () => filterProductsByLocations(products, filters.locationIds),
+    [filters.locationIds, products],
   );
 
-  function togglePendingLocationId(locationId: string | null) {
+  function toggleLocationId(locationId: string | null) {
     if (locationId === null) {
-      setPendingLocationIds([]);
+      onChange({ ...filters, locationIds: [] });
       return;
     }
 
-    setPendingLocationIds((current) =>
-      current.includes(locationId)
-        ? current.filter((id) => id !== locationId)
-        : [...current, locationId],
-    );
+    const nextLocationIds = filters.locationIds.includes(locationId)
+      ? filters.locationIds.filter((id) => id !== locationId)
+      : [...filters.locationIds, locationId];
+
+    onChange({ ...filters, locationIds: nextLocationIds });
   }
 
-  function togglePendingCategoryId(categoryId: string | null) {
+  function toggleCategoryId(categoryId: string | null) {
     if (categoryId === null) {
-      setPendingCategoryIds([]);
+      onChange({ ...filters, categoryIds: [] });
       return;
     }
 
-    setPendingCategoryIds((current) =>
-      current.includes(categoryId)
-        ? current.filter((id) => id !== categoryId)
-        : [...current, categoryId],
-    );
+    const nextCategoryIds = filters.categoryIds.includes(categoryId)
+      ? filters.categoryIds.filter((id) => id !== categoryId)
+      : [...filters.categoryIds, categoryId];
+
+    onChange({ ...filters, categoryIds: nextCategoryIds });
   }
 
   const locationOptions = useMemo<FilterOption[]>(() => {
@@ -309,126 +284,46 @@ export default function CollectionFilterSheet({
     return options;
   }, [collections, locationScopedProducts, recentProductIds]);
 
-  useEffect(() => {
-    setPendingCategoryIds((current) => {
-      const validCategoryIds = current.filter((categoryId) =>
-        categoryOptions.some((option) => option.id === categoryId),
-      );
-
-      if (
-        validCategoryIds.length === current.length &&
-        validCategoryIds.every((id, index) => id === current[index])
-      ) {
-        return current;
-      }
-
-      return validCategoryIds;
-    });
-  }, [categoryOptions]);
-
-  const handleApply = () => {
-    onApply({
-      locationIds: pendingLocationIds,
-      categoryIds: pendingCategoryIds,
-    });
-    onClose();
-  };
+  const hasActiveFilters = filters.locationIds.length > 0 || filters.categoryIds.length > 0;
 
   const handleClear = () => {
-    setPendingLocationIds([]);
-    setPendingCategoryIds([]);
-    onApply(EMPTY_COLLECTION_FILTERS);
-    onClose();
+    onChange(EMPTY_COLLECTION_FILTERS);
   };
 
-  const hasPendingFilters = pendingLocationIds.length > 0 || pendingCategoryIds.length > 0;
-
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(17, 24, 39, 0.45)' }}>
-        <Pressable className="flex-1" onPress={onClose} accessibilityLabel="Close filters" />
+    <ScrollView
+      className="flex-1 px-4"
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingTop: 4, paddingBottom: 24 }}
+    >
+      {locationOptions.length > 1 ? (
+        <FilterSection
+          title="Pickup location"
+          options={locationOptions}
+          selectedIds={filters.locationIds}
+          onToggle={toggleLocationId}
+        />
+      ) : null}
 
-        <View
-          className="rounded-t-3xl bg-white dark:bg-gray-950 px-5 pt-5"
-          style={{
-            maxHeight: height * 0.88,
-            paddingBottom: Math.max(insets.bottom, 16),
-          }}
+      <FilterSection
+        title="Category"
+        options={categoryOptions}
+        selectedIds={filters.categoryIds}
+        onToggle={toggleCategoryId}
+      />
+
+      {hasActiveFilters ? (
+        <Pressable
+          onPress={handleClear}
+          className="mt-2 flex-row items-center justify-center gap-2 rounded-full py-4"
+          style={{ backgroundColor: '#DC2626' }}
+          accessibilityRole="button"
+          accessibilityLabel="Clear filters"
         >
-          <View className="mb-1 flex-row items-start justify-between">
-            <View className="flex-1 pr-4">
-              <Text
-                className="text-2xl text-gray-900 dark:text-gray-100"
-                style={{ fontFamily: 'Georgia' }}
-              >
-                Filter collections
-              </Text>
-              <Text className="mt-1 text-sm leading-5 text-gray-500 dark:text-gray-400">
-                Choose one or more pickup locations and categories to narrow what you see.
-              </Text>
-            </View>
-
-            <Pressable
-              onPress={onClose}
-              className="h-9 w-9 items-center justify-center rounded-full"
-              style={{ backgroundColor: '#F3F4F6' }}
-              accessibilityLabel="Close"
-            >
-              <Ionicons name="close" size={20} color={colors.textMuted} />
-            </Pressable>
-          </View>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            className="mt-4"
-            contentContainerStyle={{ paddingBottom: 12 }}
-          >
-            {locationOptions.length > 1 ? (
-              <FilterSection
-                title="Pickup location"
-                options={locationOptions}
-                selectedIds={pendingLocationIds}
-                onToggle={togglePendingLocationId}
-              />
-            ) : null}
-
-            <FilterSection
-              title="Category"
-              options={categoryOptions}
-              selectedIds={pendingCategoryIds}
-              onToggle={togglePendingCategoryId}
-            />
-          </ScrollView>
-
-          <View className="mt-2 flex-row gap-3">
-            {hasPendingFilters ? (
-              <Pressable
-                onPress={handleClear}
-                className="flex-1 flex-row items-center justify-center gap-2 rounded-full border py-4"
-                style={{ borderColor: colors.border }}
-                accessibilityRole="button"
-                accessibilityLabel="Clear filters"
-              >
-                <Ionicons name="close-circle-outline" size={18} color={colors.textMuted} />
-                <Text className="text-base font-semibold" style={{ color: colors.textMuted }}>
-                  Clear
-                </Text>
-              </Pressable>
-            ) : null}
-
-            <Pressable
-              onPress={handleApply}
-              className="flex-1 flex-row items-center justify-center gap-2 rounded-full py-4"
-              style={{ backgroundColor: colors.brand }}
-              accessibilityRole="button"
-              accessibilityLabel="Apply filters"
-            >
-              <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-              <Text className="text-base font-semibold text-white">Apply filters</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    </Modal>
+          <Ionicons name="close-circle-outline" size={18} color="#FFFFFF" />
+          <Text className="text-base font-semibold text-white">Clear filters</Text>
+        </Pressable>
+      ) : null}
+    </ScrollView>
   );
 }

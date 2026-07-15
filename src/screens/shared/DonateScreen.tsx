@@ -7,6 +7,7 @@ import { useTheme } from '../../context/ThemeContext';
 
 export default function DonateScreen() {
   const { colors } = useTheme();
+
   async function openDonationForm() {
     await WebBrowser.openBrowserAsync(DONATION_FORM_URL);
   }
