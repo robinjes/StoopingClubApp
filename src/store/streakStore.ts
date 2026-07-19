@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
 import {
+  addDaysToDateString,
   daysBetweenDateStrings,
   getDatesBetween,
   getLocalDateString,
@@ -41,10 +42,14 @@ export type StreakState = {
 
 type StreakStore = StreakState & {
   isHydrated: boolean;
+  isDemo: boolean;
   hydrate: () => Promise<void>;
   recordAppOpen: () => Promise<StreakOpenEvent>;
   restoreStreak: () => Promise<boolean>;
   dismissBrokenStreak: () => Promise<void>;
+  showActiveStreakDemo: () => void;
+  showBrokenStreakDemo: () => void;
+  resetStreakDemo: () => Promise<void>;
 };
 
 const EMPTY_STREAK: StreakState = {
@@ -112,6 +117,7 @@ function earnedFreeze(previousStreak: number, nextStreak: number): boolean {
 export const useStreakStore = create<StreakStore>((set, get) => ({
   ...EMPTY_STREAK,
   isHydrated: false,
+  isDemo: false,
 
   hydrate: async () => {
     try {
@@ -119,18 +125,22 @@ export const useStreakStore = create<StreakStore>((set, get) => ({
         (await AsyncStorage.getItem(STREAK_STORAGE_KEY)) ??
         (await AsyncStorage.getItem(LEGACY_STREAK_STORAGE_KEY));
       if (stored) {
-        set({ ...normalizeStreakState(JSON.parse(stored)), isHydrated: true });
+        set({ ...normalizeStreakState(JSON.parse(stored)), isHydrated: true, isDemo: false });
         return;
       }
     } catch {
       // Fall through to empty state.
     }
 
-    set({ ...EMPTY_STREAK, isHydrated: true });
+    set({ ...EMPTY_STREAK, isHydrated: true, isDemo: false });
   },
 
   recordAppOpen: async () => {
     const state = get();
+    if (state.isDemo) {
+      return 'none';
+    }
+
     const today = getLocalDateString();
 
     if (state.lastOpenDate === today) {
@@ -224,8 +234,10 @@ export const useStreakStore = create<StreakStore>((set, get) => ({
       brokenStreak: null,
     };
 
-    set(nextState);
-    await persistStreak(nextState);
+    set({ ...nextState, isDemo: state.isDemo });
+    if (!state.isDemo) {
+      await persistStreak(nextState);
+    }
     return true;
   },
 
@@ -236,7 +248,53 @@ export const useStreakStore = create<StreakStore>((set, get) => ({
     }
 
     const nextState: StreakState = { ...state, brokenStreak: null };
-    set(nextState);
-    await persistStreak(nextState);
+    set({ ...nextState, isDemo: state.isDemo });
+    if (!state.isDemo) {
+      await persistStreak(nextState);
+    }
+  },
+
+  showActiveStreakDemo: () => {
+    const today = getLocalDateString();
+    const frozenDate = addDaysToDateString(today, -3);
+    const activeDates = [0, -1, -2, -4, -5, -6]
+      .map((offset) => addDaysToDateString(today, offset));
+
+    set({
+      currentStreak: 7,
+      longestStreak: 12,
+      lastOpenDate: today,
+      activeDates,
+      frozenDates: [frozenDate],
+      freezesAvailable: 1,
+      brokenStreak: null,
+      isDemo: true,
+    });
+  },
+
+  showBrokenStreakDemo: () => {
+    const today = getLocalDateString();
+    const lastActiveDate = addDaysToDateString(today, -2);
+    const activeDates = [0, -2, -3, -4, -5, -6, -7, -8]
+      .map((offset) => addDaysToDateString(today, offset));
+
+    set({
+      currentStreak: 1,
+      longestStreak: 7,
+      lastOpenDate: today,
+      activeDates,
+      frozenDates: [],
+      freezesAvailable: 0,
+      brokenStreak: {
+        length: 7,
+        lastActiveDate,
+        brokenOnDate: today,
+      },
+      isDemo: true,
+    });
+  },
+
+  resetStreakDemo: async () => {
+    await get().hydrate();
   },
 }));

@@ -22,6 +22,11 @@ import { haptics } from '../../services/feedback/haptics';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
+const PANEL_WIDTH = 212;
+const OPEN_SPRING = { damping: 16, stiffness: 240, mass: 0.7 };
+const SHOP_COLOR = '#00553A';
+const DONATE_COLOR = '#FF6B7A';
+
 type MenuItem = {
   id: string;
   label: string;
@@ -53,11 +58,6 @@ const MENU_ITEMS: MenuItem[] = [
     overlay: 'contact',
   },
 ];
-
-const PANEL_WIDTH = 212;
-const OPEN_SPRING = { damping: 16, stiffness: 240, mass: 0.7 };
-const SHOP_COLOR = '#00553A';
-const DONATE_COLOR = '#FF6B7A';
 
 type MenuRowProps = {
   item: MenuItem;
@@ -187,7 +187,6 @@ export default function StoopyGuide() {
   const { colors, isDark } = useTheme();
   const { isStoopyNav } = useNavLayout();
   const [menuOpen, setMenuOpen] = useState(false);
-
   const stoopyScale = useSharedValue(1);
   const stoopyBounce = useSharedValue(0);
 
@@ -270,33 +269,23 @@ export default function StoopyGuide() {
         </View>
 
         <View style={styles.barRow}>
-          <AnimatedPressable
-            haptic={null}
-            pressedScale={0.92}
-            accessibilityRole="button"
-            accessibilityLabel="Shop"
-            accessibilityState={{ selected: isShopActive }}
-            onPress={handleShopPress}
-            style={styles.sideTab}
-          >
-            <View style={styles.sideTabContent}>
+          <View style={styles.iconRow}>
+            <AnimatedPressable
+              haptic={null}
+              pressedScale={0.92}
+              accessibilityRole="button"
+              accessibilityLabel="Shop"
+              accessibilityState={{ selected: isShopActive }}
+              onPress={handleShopPress}
+              style={styles.navTab}
+            >
               <Ionicons
                 name={isShopActive ? 'bag' : 'bag-outline'}
-                size={28}
+                size={44}
                 color={isShopActive ? SHOP_COLOR : `${SHOP_COLOR}99`}
               />
-              <Text
-                style={[
-                  styles.sideLabel,
-                  { color: isShopActive ? SHOP_COLOR : `${SHOP_COLOR}99` },
-                ]}
-              >
-                Shop
-              </Text>
-            </View>
-          </AnimatedPressable>
+            </AnimatedPressable>
 
-          <View style={styles.centerTab}>
             <AnimatedPressable
               haptic={null}
               pressedScale={0.94}
@@ -304,7 +293,7 @@ export default function StoopyGuide() {
               accessibilityLabel="Explore"
               accessibilityState={{ selected: menuOpen }}
               onPress={handleExplorePress}
-              style={styles.stoopyButton}
+              style={styles.navTab}
             >
               <Animated.View
                 style={[
@@ -325,34 +314,49 @@ export default function StoopyGuide() {
                 />
               </Animated.View>
             </AnimatedPressable>
+
+            <AnimatedPressable
+              haptic={null}
+              pressedScale={0.92}
+              accessibilityRole="button"
+              accessibilityLabel="Donate"
+              accessibilityState={{ selected: isDonateActive }}
+              onPress={handleDonatePress}
+              style={styles.navTab}
+            >
+              <Ionicons
+                name={isDonateActive ? 'gift' : 'gift-outline'}
+                size={44}
+                color={DONATE_COLOR}
+              />
+            </AnimatedPressable>
+          </View>
+
+          <View style={styles.labelRow} pointerEvents="none">
             <Text
               style={[
-                styles.centerLabel,
-                { color: menuOpen || overlay === 'about' || overlay === 'involved' || overlay === 'contact' ? SHOP_COLOR : colors.textMuted },
+                styles.navLabel,
+                styles.shopLabel,
+                { color: isShopActive ? SHOP_COLOR : `${SHOP_COLOR}99` },
+              ]}
+            >
+              Shop
+            </Text>
+            <Text
+              style={[
+                styles.navLabel,
+                {
+                  color:
+                    menuOpen || overlay === 'about' || overlay === 'involved' || overlay === 'contact'
+                      ? SHOP_COLOR
+                      : colors.textMuted,
+                },
               ]}
             >
               Explore
             </Text>
+            <Text style={[styles.navLabel, { color: DONATE_COLOR }]}>Donate</Text>
           </View>
-
-          <AnimatedPressable
-            haptic={null}
-            pressedScale={0.92}
-            accessibilityRole="button"
-            accessibilityLabel="Donate"
-            accessibilityState={{ selected: isDonateActive }}
-            onPress={handleDonatePress}
-            style={styles.sideTab}
-          >
-            <View style={styles.sideTabContent}>
-              <Ionicons
-                name={isDonateActive ? 'gift' : 'gift-outline'}
-                size={28}
-                color={DONATE_COLOR}
-              />
-              <Text style={[styles.sideLabel, { color: DONATE_COLOR }]}>Donate</Text>
-            </View>
-          </AnimatedPressable>
         </View>
       </View>
     </>
@@ -412,48 +416,39 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
   },
   barRow: {
-    flexDirection: 'row',
+    height: STOOPY_BAR_HEIGHT,
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'flex-end',
     paddingHorizontal: 12,
-    paddingTop: 4,
-    minHeight: STOOPY_BAR_HEIGHT,
+    paddingBottom: 6,
   },
-  sideTab: {
+  iconRow: {
+    flexDirection: 'row',
+    width: '100%',
+    height: STOOPY_SIZE,
+  },
+  navTab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 4,
-    gap: 2,
   },
-  sideTabContent: {
+  shopLabel: {
+    transform: [{ translateY: -2.5 }],
+  },
+  labelRow: {
+    flexDirection: 'row',
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
+    marginTop: 2,
   },
-  sideLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+  navLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
     textAlign: 'center',
-  },
-  centerTab: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: 4,
-  },
-  stoopyButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 0,
   },
   stoopyImage: {
     width: STOOPY_SIZE,
     height: STOOPY_SIZE,
-  },
-  centerLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 2,
   },
 });

@@ -187,12 +187,3 @@ export function scoreProductMatch(product: SearchableProduct, query: string): nu
 
   return averageTokenScore;
 }
-
-export function matchesProductSearch(product: SearchableProduct, query: string): boolean {
-  const normalizedQuery = normalize(query);
-  if (!normalizedQuery) {
-    return true;
-  }
-
-  return scoreProductMatch(product, normalizedQuery) >= 0.42;
-}

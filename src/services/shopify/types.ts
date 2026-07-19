@@ -35,12 +35,19 @@ export type CartLine = {
   productHandle?: string | null;
 };
 
+export type CartAttribute = {
+  key: string;
+  value: string;
+};
+
 export type ShopifyCart = {
   id: string;
   checkoutUrl: string;
   totalQuantity: number;
   lines: CartLine[];
   subtotal: ShopifyMoney;
+  note: string | null;
+  attributes: CartAttribute[];
 };
 
 export type ShopifyApiError = {

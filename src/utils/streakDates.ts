@@ -5,12 +5,6 @@ export function getLocalDateString(date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-export function getYesterdayDateString(date = new Date()): string {
-  const yesterday = new Date(date);
-  yesterday.setDate(yesterday.getDate() - 1);
-  return getLocalDateString(yesterday);
-}
-
 export function parseLocalDate(dateString: string): Date {
   return new Date(`${dateString}T12:00:00`);
 }

@@ -3,6 +3,7 @@ export {
   createCart,
   getCart,
   removeFromCart,
+  updateCartCheckoutDetails,
   updateCartLine,
 } from './cart';
 export {
@@ -17,8 +18,8 @@ export {
   logoutCustomer,
   prepareEmailCodeLoginSession,
 } from './customerAuth';
-export { getProducts } from './products';
 export type {
+  CartAttribute,
   CartLine,
   ShopifyCart,
   ShopifyProduct,

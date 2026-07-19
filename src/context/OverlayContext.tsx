@@ -20,7 +20,6 @@ type OverlayContextValue = {
 };
 
 import { haptics } from '../services/feedback/haptics';
-import { playSound } from '../services/feedback/sounds';
 
 const OverlayContext = createContext<OverlayContextValue | null>(null);
 

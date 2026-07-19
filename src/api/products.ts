@@ -156,21 +156,6 @@ export async function fetchProductsPage(
   };
 }
 
-export async function getProducts(): Promise<ShopifyProduct[]> {
-  const products: ShopifyProduct[] = [];
-  let hasNextPage = true;
-  let after: string | null = null;
-
-  while (hasNextPage) {
-    const page = await fetchProductsPage(50, after);
-    products.push(...page.products);
-    hasNextPage = page.pageInfo.hasNextPage;
-    after = page.pageInfo.endCursor;
-  }
-
-  return products;
-}
-
 /** Fetches Est. retail value from the live product page when metafields are unavailable. */
 export async function fetchEstRetailFromStorefrontPage(handle: string): Promise<number | null> {
   const candidates = [

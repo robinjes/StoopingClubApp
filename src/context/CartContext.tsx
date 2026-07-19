@@ -14,6 +14,7 @@ import {
   createCart,
   getCart,
   removeFromCart,
+  updateCartCheckoutDetails,
   updateCartLine,
 } from '../services/shopify';
 import type { ShopifyCart } from '../services/shopify';
@@ -30,6 +31,7 @@ type CartContextValue = {
   addItem: (merchandiseId: string, quantity?: number) => Promise<void>;
   updateItem: (lineId: string, quantity: number) => Promise<void>;
   removeItem: (lineId: string) => Promise<void>;
+  updateCheckoutDetails: (note: string, phoneNumber: string) => Promise<void>;
   clearCart: () => Promise<void>;
   clearError: () => void;
 };
@@ -179,6 +181,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [applyCart, cart],
   );
 
+  const updateCheckoutDetails = useCallback(
+    async (note: string, phoneNumber: string) => {
+      if (!cart) {
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const updatedCart = await updateCartCheckoutDetails(cart, note, phoneNumber);
+        if (!updatedCart) {
+          throw new Error('Could not save checkout details.');
+        }
+
+        await applyCart(updatedCart);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to save checkout details.';
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [applyCart, cart],
+  );
+
   const clearCart = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -208,10 +237,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addItem,
       updateItem,
       removeItem,
+      updateCheckoutDetails,
       clearCart,
       clearError,
     }),
-    [cart, isLoading, error, initializeCart, addItem, updateItem, removeItem, clearCart, clearError],
+    [
+      cart,
+      isLoading,
+      error,
+      initializeCart,
+      addItem,
+      updateItem,
+      removeItem,
+      updateCheckoutDetails,
+      clearCart,
+      clearError,
+    ],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

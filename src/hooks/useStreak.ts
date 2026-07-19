@@ -11,6 +11,9 @@ export function useStreak() {
   const isHydrated = useStreakStore((state) => state.isHydrated);
   const restoreStreak = useStreakStore((state) => state.restoreStreak);
   const dismissBrokenStreak = useStreakStore((state) => state.dismissBrokenStreak);
+  const showActiveStreakDemo = useStreakStore((state) => state.showActiveStreakDemo);
+  const showBrokenStreakDemo = useStreakStore((state) => state.showBrokenStreakDemo);
+  const resetStreakDemo = useStreakStore((state) => state.resetStreakDemo);
 
   return {
     currentStreak,
@@ -23,5 +26,8 @@ export function useStreak() {
     isHydrated,
     restoreStreak,
     dismissBrokenStreak,
+    showActiveStreakDemo,
+    showBrokenStreakDemo,
+    resetStreakDemo,
   };
 }

@@ -18,6 +18,10 @@ const THEME_STORAGE_KEY = 'stooping-club-color-scheme';
 
 type ThemeMode = 'light' | 'dark';
 
+// NativeWind otherwise starts from the device's color scheme before React can
+// load the user's saved preference, causing isolated dark-styled views to flash.
+colorScheme.set('light');
+
 type ThemeContextValue = {
   mode: ThemeMode;
   isDark: boolean;

@@ -36,6 +36,9 @@ export default function StreakModal({ visible, onClose }: StreakModalProps) {
     lastOpenDate,
     restoreStreak,
     dismissBrokenStreak,
+    showActiveStreakDemo,
+    showBrokenStreakDemo,
+    resetStreakDemo,
   } = useStreak();
   const today = new Date();
   const [visibleMonth, setVisibleMonth] = useState({
@@ -251,6 +254,44 @@ export default function StreakModal({ visible, onClose }: StreakModalProps) {
               })}
             </View>
           </View>
+
+          {__DEV__ ? (
+            <View className="mx-5 mb-4 rounded-xl bg-gray-100 p-3 dark:bg-gray-900">
+              <Text className="text-center text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Streak demo
+              </Text>
+              <View className="mt-2 flex-row gap-2">
+                <Pressable
+                  onPress={showActiveStreakDemo}
+                  className="flex-1 items-center rounded-lg bg-white py-2 dark:bg-gray-800"
+                  accessibilityRole="button"
+                  accessibilityLabel="Show active streak demo"
+                >
+                  <Text className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                    Active streak
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={showBrokenStreakDemo}
+                  className="flex-1 items-center rounded-lg bg-white py-2 dark:bg-gray-800"
+                  accessibilityRole="button"
+                  accessibilityLabel="Show broken streak demo"
+                >
+                  <Text className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                    Streak broke
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => void resetStreakDemo()}
+                  className="items-center justify-center rounded-lg px-2"
+                  accessibilityRole="button"
+                  accessibilityLabel="Restore your real streak"
+                >
+                  <Ionicons name="refresh" size={18} color="#6B7280" />
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
 
           <Pressable
             onPress={onClose}

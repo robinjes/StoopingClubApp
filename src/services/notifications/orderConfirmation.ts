@@ -2,7 +2,6 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { ORDER_MESSAGE_TEST_ITEMS } from '../../data/orderMessageTemplate';
 import type { OrderMessageItem } from '../../utils/orderMessage';
 import { buildOrderMessage } from '../../utils/orderMessage';
 
@@ -71,13 +70,4 @@ export async function sendOrderConfirmationMessage(
   });
 
   return { ok: true };
-}
-
-export async function sendTestOrderConfirmationMessage(): Promise<OrderMessageResult> {
-  return sendOrderConfirmationMessage(
-    ORDER_MESSAGE_TEST_ITEMS.map((item) => ({
-      title: item.title,
-      quantity: item.quantity,
-    })),
-  );
 }

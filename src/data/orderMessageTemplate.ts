@@ -10,8 +10,3 @@ export const ORDER_MESSAGE_TEMPLATE = {
   pickupAddressLine: '{{pickupAddress}}',
   footer: 'We will see you at pickup. Thanks for stooping with us!',
 } as const;
-
-export const ORDER_MESSAGE_TEST_ITEMS = [
-  { title: 'Orange Candle', quantity: 1 },
-  { title: 'White Tote Bag', quantity: 2 },
-] as const;

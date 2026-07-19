@@ -10,6 +10,11 @@ const CART_FIELDS = `
   id
   checkoutUrl
   totalQuantity
+  note
+  attributes {
+    key
+    value
+  }
   cost {
     subtotalAmount {
       amount
@@ -126,10 +131,40 @@ const CART_LINES_REMOVE_MUTATION = `
   }
 `;
 
+const CART_NOTE_UPDATE_MUTATION = `
+  mutation CartNoteUpdate($cartId: ID!, $note: String!) {
+    cartNoteUpdate(cartId: $cartId, note: $note) {
+      cart {
+        ${CART_FIELDS}
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+const CART_ATTRIBUTES_UPDATE_MUTATION = `
+  mutation CartAttributesUpdate($cartId: ID!, $attributes: [AttributeInput!]!) {
+    cartAttributesUpdate(cartId: $cartId, attributes: $attributes) {
+      cart {
+        ${CART_FIELDS}
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
 type CartNode = {
   id: string;
   checkoutUrl: string;
   totalQuantity: number;
+  note: string | null;
+  attributes: Array<{ key: string; value: string }>;
   cost: {
     subtotalAmount: { amount: string; currencyCode: string };
   };
@@ -198,6 +233,8 @@ function mapCart(node: CartNode | null): ShopifyCart | null {
     checkoutUrl: node.checkoutUrl,
     totalQuantity: node.totalQuantity,
     subtotal: node.cost.subtotalAmount,
+    note: node.note,
+    attributes: node.attributes,
     lines: node.lines.edges.map(({ node: line }) => ({
       id: line.id,
       quantity: line.quantity,
@@ -290,4 +327,34 @@ export async function removeFromCart(
   }
 
   return mapCart(data.cartLinesRemove.cart);
+}
+
+export async function updateCartCheckoutDetails(
+  cart: ShopifyCart,
+  note: string,
+  phoneNumber: string,
+): Promise<ShopifyCart | null> {
+  const noteData = await shopifyFetch<{
+    cartNoteUpdate: { cart: CartNode; userErrors: Array<{ message: string }> };
+  }>(CART_NOTE_UPDATE_MUTATION, { cartId: cart.id, note });
+
+  const noteError = getUserError(noteData.cartNoteUpdate.userErrors);
+  if (noteError) {
+    throw new Error(noteError);
+  }
+
+  const attributes = [
+    ...cart.attributes.filter(({ key }) => key !== 'Mobile number'),
+    { key: 'Mobile number', value: phoneNumber },
+  ];
+  const attributesData = await shopifyFetch<{
+    cartAttributesUpdate: { cart: CartNode; userErrors: Array<{ message: string }> };
+  }>(CART_ATTRIBUTES_UPDATE_MUTATION, { cartId: cart.id, attributes });
+
+  const attributesError = getUserError(attributesData.cartAttributesUpdate.userErrors);
+  if (attributesError) {
+    throw new Error(attributesError);
+  }
+
+  return mapCart(attributesData.cartAttributesUpdate.cart);
 }

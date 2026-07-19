@@ -7,7 +7,6 @@ const SOUND_VOLUME: Record<SoundId, number> = {
   pop: 0.55,
   swoosh: 0.4,
   paper: 0.35,
-  pageRustle: 0.38,
   success: 0.5,
   slideOut: 0.38,
   notification: 0.45,

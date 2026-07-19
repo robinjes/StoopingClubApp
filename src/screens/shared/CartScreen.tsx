@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ActivityIndicator, Image, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TextInput, View } from 'react-native';
 
 import AnimatedPressable from '../../components/feedback/AnimatedPressable';
 import CartItemRow from '../../components/feedback/CartItemRow';
@@ -34,6 +34,7 @@ export default function CartScreen() {
     error,
     updateItem,
     removeItem,
+    updateCheckoutDetails,
     clearError,
   } = useCart();
   const { haptic } = useFeedback();
@@ -41,8 +42,17 @@ export default function CartScreen() {
   const products = useProductStore((state) => state.products);
   const retailByHandle = useRetailValueStore((state) => state.byHandle);
   const isEnrichingRetail = useCartRetailEnrichment(itemCount > 0);
+  const [orderNote, setOrderNote] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const currencyCode = cart?.subtotal.currencyCode ?? 'USD';
+
+  useEffect(() => {
+    setOrderNote(cart?.note ?? '');
+    setPhoneNumber(cart?.attributes.find(({ key }) => key === 'Mobile number')?.value ?? '');
+    setPhoneError(null);
+  }, [cart?.id]);
 
   const youSavedAmount = useMemo(() => {
     if (!cart?.lines.length) {
@@ -73,20 +83,26 @@ export default function CartScreen() {
     }, 0);
   }, [cart?.lines, products, retailByHandle]);
 
-  function handleCheckout() {
+  async function handleCheckout() {
     if (!checkoutUrl || checkoutRestricted) {
       return;
     }
 
-    haptic('medium');
-    cartNavigation.navigate('Checkout', { checkoutUrl });
-  }
+    const formattedPhoneNumber = phoneNumber.trim();
+    if (formattedPhoneNumber.replace(/\D/g, '').length < 7) {
+      setPhoneError('Enter a valid mobile number to continue.');
+      return;
+    }
 
-  function handleTestCelebration() {
-    cartNavigation.push('OrderConfirmation', {
-      items: [{ title: 'Test item', quantity: 1 }],
-      orderedAt: new Date().toISOString(),
-    });
+    setPhoneError(null);
+    haptic('medium');
+    try {
+      await updateCheckoutDetails(orderNote.trim(), formattedPhoneNumber);
+    } catch {
+      return;
+    }
+
+    cartNavigation.navigate('Checkout', { checkoutUrl });
   }
 
   return (
@@ -110,19 +126,6 @@ export default function CartScreen() {
             </View>
           ) : null}
         </View>
-
-        {__DEV__ ? (
-          <AnimatedPressable
-            haptic="selection"
-            className="mt-3 self-start rounded-lg border px-3 py-2"
-            style={{ borderColor: colors.border }}
-            onPress={handleTestCelebration}
-          >
-            <Text className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-              Test order celebration
-            </Text>
-          </AnimatedPressable>
-        ) : null}
 
         {!isShopifyConfigured() ? (
           <Text className="mt-3 text-sm text-red-600">
@@ -177,7 +180,8 @@ export default function CartScreen() {
             <ScrollView
               className="flex-1"
               showsVerticalScrollIndicator={false}
-              contentContainerClassName="pb-4"
+              keyboardShouldPersistTaps="handled"
+              contentContainerClassName="pb-8"
             >
               {cart?.lines.map((line) => (
                 <CartItemRow
@@ -187,18 +191,34 @@ export default function CartScreen() {
                   onRemove={(lineId) => void removeItem(lineId)}
                 />
               ))}
-            </ScrollView>
 
-            <View className="border-t border-gray-200 pt-4 dark:border-gray-800">
-              {checkoutRestricted ? (
-                <View className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-                  <Text className="text-sm font-semibold text-red-800">Checkout paused</Text>
-                  <Text className="mt-1 text-sm leading-5 text-red-700">
-                    You have {noShowCount} recent no-shows. Pick up existing orders or contact the
-                    team before placing a new one.
-                  </Text>
-                </View>
-              ) : null}
+              <View className="mt-1 border-t border-gray-200 pt-4 dark:border-gray-800">
+                {checkoutRestricted ? (
+                  <View className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                    <Text className="text-sm font-semibold text-red-800">Checkout paused</Text>
+                    <Text className="mt-1 text-sm leading-5 text-red-700">
+                      You have {noShowCount} recent no-shows. Pick up existing orders or contact the
+                      team before placing a new one.
+                    </Text>
+                  </View>
+                ) : null}
+
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
+                  Order notes <Text style={{ color: colors.textMuted }}>(optional)</Text>
+                </Text>
+                <TextInput
+                  value={orderNote}
+                  onChangeText={setOrderNote}
+                  placeholder="Add pickup notes or special instructions"
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  maxLength={500}
+                  textAlignVertical="top"
+                  className="min-h-[88px] rounded-xl border px-3 py-3 text-base"
+                  style={{ borderColor: colors.border, color: colors.text }}
+                />
+              </View>
 
               <View className="mb-1 flex-row items-center justify-between py-2">
                 <Text className="text-base" style={{ color: colors.text }}>
@@ -229,6 +249,35 @@ export default function CartScreen() {
                 All items are free. Local pickup only. No returns.
               </Text>
 
+              <View className="mb-4">
+                <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
+                  Mobile number <Text className="text-red-600">*</Text>
+                </Text>
+                <TextInput
+                  value={phoneNumber}
+                  onChangeText={(value) => {
+                    setPhoneNumber(value);
+                    if (phoneError) {
+                      setPhoneError(null);
+                    }
+                  }}
+                  placeholder="(555) 555-5555"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="phone-pad"
+                  autoComplete="tel"
+                  textContentType="telephoneNumber"
+                  className="rounded-xl border px-3 py-3 text-base"
+                  style={{
+                    borderColor: phoneError ? '#DC2626' : colors.border,
+                    color: colors.text,
+                  }}
+                />
+                <Text className="mt-2 text-xs leading-5" style={{ color: colors.textMuted }}>
+                  We’ll text pickup details. A mobile number is required to proceed.
+                </Text>
+                {phoneError ? <Text className="mt-1 text-xs text-red-600">{phoneError}</Text> : null}
+              </View>
+
               <AnimatedPressable
                 haptic="medium"
                 pressedScale={0.97}
@@ -238,7 +287,7 @@ export default function CartScreen() {
                   opacity: checkoutUrl && !checkoutRestricted ? 1 : 0.5,
                 }}
                 disabled={!checkoutUrl || isLoading || checkoutRestricted}
-                onPress={handleCheckout}
+                onPress={() => void handleCheckout()}
               >
                 {isLoading ? (
                   <ActivityIndicator color="#FFFFFF" />
@@ -246,7 +295,8 @@ export default function CartScreen() {
                   <Text className="text-base font-semibold text-white">Check out</Text>
                 )}
               </AnimatedPressable>
-            </View>
+              </View>
+            </ScrollView>
           </View>
         ) : null}
       </View>

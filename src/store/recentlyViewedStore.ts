@@ -5,7 +5,6 @@ const RECENTLY_VIEWED_KEY = 'recently_viewed_products_v2';
 const V1_RECENTLY_VIEWED_KEY = 'recently_viewed_products';
 const LEGACY_RECENTLY_VIEWED_KEY = 'recently_viewed_product_ids';
 export const MAX_RECENTLY_VIEWED_ITEMS = 25;
-export const HOME_RECENTLY_VIEWED_LIMIT = 3;
 
 export type RecentlyViewedEntry = {
   productId: string;
@@ -137,7 +136,3 @@ export const useRecentlyViewedStore = create<RecentlyViewedStore>((set, get) => 
     await AsyncStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(next));
   },
 }));
-
-export function getTrackedRecentlyViewed(entries: RecentlyViewedEntry[]): RecentlyViewedEntry[] {
-  return entries.filter((entry) => entry.viewedAt !== null);
-}
