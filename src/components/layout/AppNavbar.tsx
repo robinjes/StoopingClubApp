@@ -76,7 +76,7 @@ export default function AppNavbar({ showBack = false, onBack }: AppNavbarProps) 
             className="flex-row items-center gap-2"
           >
             <Image
-              source={require('../../../assets/stoopingclublogo.png')}
+              source={require('../../../assets/stoopylogo.png')}
               className="h-8 w-8"
               resizeMode="contain"
               accessibilityLabel="Stooping Club"
