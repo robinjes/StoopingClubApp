@@ -19,12 +19,18 @@ export default function CartIconButton({ itemCount, onPress }: CartIconButtonPro
 
   useEffect(() => {
     registerCartTarget(
-      () =>
-        new Promise((resolve) => {
-          cartRef.current?.measureInWindow((x, y, width, height) => {
+      () => {
+        const cartNode = cartRef.current;
+        if (!cartNode) {
+          return Promise.resolve(null);
+        }
+
+        return new Promise((resolve) => {
+          cartNode.measureInWindow((x, y, width, height) => {
             resolve(width > 0 ? { x, y, width, height } : null);
           });
-        }),
+        });
+      },
     );
   }, [registerCartTarget]);
 

@@ -6,10 +6,10 @@
       "stoopingclubapp",
       "shop.74832183474.app"
     ],
-    "version": "1.0.1",
+    "version": "1.0.2",
     "newArchEnabled": true,
     "orientation": "portrait",
-    "icon": "./assets/android-icon-foreground.png",
+    "icon": "./assets/stoopingclub-app-icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/stoopylogo.png",
@@ -40,8 +40,8 @@
     "android": {
       "package": "com.stoopingclub.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/stoopingclub-app-icon.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
