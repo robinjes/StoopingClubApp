@@ -4,7 +4,6 @@ export function isCheckoutCompleteUrl(url: string): boolean {
   return (
     normalized.includes('thank_you') ||
     normalized.includes('thank-you') ||
-    normalized.includes('/orders/') ||
     normalized.includes('checkout/success')
   );
 }

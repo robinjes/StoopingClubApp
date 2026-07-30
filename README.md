@@ -140,13 +140,6 @@ src/
 
 Both must be configured for the full experience. Browsing and checkout work with Storefront API alone; account-specific features need Customer Account API credentials.
 
-## Dev tools
-
-In development builds (`__DEV__`), two test notification buttons appear in the top navbar next to the logo:
-
-- **Receipt icon** — test order confirmation message
-- **Bell icon** — test Sunday pickup reminder
-
 ## Sharing with testers
 
 For a link others can open without your dev server running, set up [EAS Build](https://docs.expo.dev/build/introduction/) preview/internal distribution (TestFlight on iOS, internal APK on Android). This is the recommended path before App Store / Play Store release.

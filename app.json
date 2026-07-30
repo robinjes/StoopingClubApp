@@ -6,19 +6,17 @@
       "stoopingclubapp",
       "shop.74832183474.app"
     ],
-    "version": "1.0.3",
+    "version": "2.2.2",
     "newArchEnabled": true,
     "orientation": "portrait",
     "icon": "./assets/stoopingclub-app-icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/stoopylogo.png",
-      "resizeMode": "contain",
       "backgroundColor": "#F7F4EE"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.stoopingclub.app",
+      "bundleIdentifier": "com.stoopingclubfoundation.berkeley",
       "infoPlist": {
         "NSUserNotificationsUsageDescription": "Stooping Club sends Friday order reminders and Sunday pickup reminders.",
         "CFBundleURLTypes": [
@@ -32,8 +30,6 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "splash": {
-        "image": "./assets/stoopylogo.png",
-        "resizeMode": "contain",
         "backgroundColor": "#F7F4EE"
       }
     },
@@ -81,10 +77,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/stoopylogo.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#F7F4EE",
-          "imageWidth": 300
+          "backgroundColor": "#F7F4EE"
         }
       ],
       [

@@ -2,12 +2,14 @@ import { useCallback, useState } from 'react';
 
 import { fetchEstRetailFromStorefrontPage } from '../api/products';
 import { useCart } from '../context/CartContext';
+import { useOverlay } from '../context/OverlayContext';
 import { useProductStore } from '../store/productStore';
 import { useRetailValueStore } from '../store/retailValueStore';
 import type { ShopifyProduct } from '../types/shopify';
 
 export function useAddToCart() {
   const { addItem } = useCart();
+  const { openOverlay } = useOverlay();
   const setProductEstRetailValue = useProductStore((state) => state.setProductEstRetailValue);
   const setRetailValue = useRetailValueStore((state) => state.setRetailValue);
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
@@ -29,11 +31,12 @@ export function useAddToCart() {
           }
         }
         await addItem(variantId);
+        openOverlay('cart');
       } finally {
         setAddingProductId(null);
       }
     },
-    [addItem, setProductEstRetailValue, setRetailValue],
+    [addItem, openOverlay, setProductEstRetailValue, setRetailValue],
   );
 
   return { handleAddToCart, addingProductId };

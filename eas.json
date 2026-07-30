@@ -16,12 +16,10 @@
         "buildType": "apk"
       },
       "ios": {
-        "distribution": "store",
-        "autoIncrement": true
+        "distribution": "store"
       }
     },
     "production": {
-      "autoIncrement": true,
       "environment": "production"
     }
   },

@@ -15,7 +15,7 @@ type CartIconButtonProps = {
 
 export default function CartIconButton({ itemCount, onPress }: CartIconButtonProps) {
   const cartRef = useRef<View>(null);
-  const { registerCartTarget, cartPulse, cartSparkle, badgeBump } = useFlyToCart();
+  const { registerCartTarget, cartPulse, cartSparkle } = useFlyToCart();
 
   useEffect(() => {
     registerCartTarget(
@@ -43,10 +43,6 @@ export default function CartIconButton({ itemCount, onPress }: CartIconButtonPro
     transform: [{ scale: 0.8 + cartSparkle.value * 0.5 }],
   }));
 
-  const badgeStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: badgeBump.value }],
-  }));
-
   return (
     <AnimatedPressable
       haptic="selection"
@@ -69,14 +65,11 @@ export default function CartIconButton({ itemCount, onPress }: CartIconButtonPro
           />
         </Animated.View>
         {itemCount > 0 ? (
-          <Animated.View
-            style={badgeStyle}
-            className="absolute -right-2 -top-1 min-w-[16px] items-center rounded-full bg-white px-1"
-          >
+          <View className="absolute -right-2 -top-1 min-w-[16px] items-center rounded-full bg-white px-1">
             <Text style={{ color: HEADER_GREEN, fontSize: 10, fontWeight: '600' }}>
               {itemCount > 9 ? '9+' : itemCount}
             </Text>
-          </Animated.View>
+          </View>
         ) : null}
       </Animated.View>
     </AnimatedPressable>

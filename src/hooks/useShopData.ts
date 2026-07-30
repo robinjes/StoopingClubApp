@@ -6,22 +6,10 @@ import { isShopifyConfigured } from '../services/shopify';
 import { useCollectionStore } from '../store/collectionStore';
 import { useProductStore } from '../store/productStore';
 
+const INITIAL_PRODUCTS_PAGE_SIZE = 48;
+const PRODUCTS_PAGE_SIZE = 100;
+
 let loadPromise: Promise<void> | null = null;
-
-async function fetchAllProducts(): Promise<Awaited<ReturnType<typeof fetchProductsPage>>['products']> {
-  const products: Awaited<ReturnType<typeof fetchProductsPage>>['products'] = [];
-  let hasNextPage = true;
-  let after: string | null = null;
-
-  while (hasNextPage) {
-    const page = await fetchProductsPage(50, after);
-    products.push(...page.products);
-    hasNextPage = page.pageInfo.hasNextPage;
-    after = page.pageInfo.endCursor;
-  }
-
-  return products;
-}
 
 async function loadShopData(options: { background?: boolean } = {}): Promise<void> {
   if (!isShopifyConfigured()) {
@@ -35,6 +23,7 @@ async function loadShopData(options: { background?: boolean } = {}): Promise<voi
   const {
     products,
     setProducts,
+    appendProducts,
     setLoading,
     setLoadingMore,
     setError,
@@ -49,13 +38,38 @@ async function loadShopData(options: { background?: boolean } = {}): Promise<voi
   setError(null);
 
   try {
-    const [fetchedProducts, fetchedCollections] = await Promise.all([
-      fetchAllProducts(),
-      getCollections(),
-    ]);
+    const collectionsPromise = getCollections().then(
+      (collections) => ({ status: 'success' as const, collections }),
+      (error: unknown) => ({ status: 'error' as const, error }),
+    );
+    let productPage = await fetchProductsPage(INITIAL_PRODUCTS_PAGE_SIZE);
+    const fetchedProducts = [...productPage.products];
+    const renderProgressively = isInitialLoad;
 
-    setProducts(fetchedProducts);
-    setCollections(fetchedCollections);
+    if (renderProgressively) {
+      setProducts(productPage.products);
+      setLoading(false);
+      setLoadingMore(productPage.pageInfo.hasNextPage);
+    }
+
+    while (productPage.pageInfo.hasNextPage) {
+      productPage = await fetchProductsPage(PRODUCTS_PAGE_SIZE, productPage.pageInfo.endCursor);
+      fetchedProducts.push(...productPage.products);
+
+      if (renderProgressively) {
+        appendProducts(productPage.products);
+      }
+    }
+
+    if (!renderProgressively) {
+      setProducts(fetchedProducts);
+    }
+
+    const collectionsResult = await collectionsPromise;
+    if (collectionsResult.status === 'error') {
+      throw collectionsResult.error;
+    }
+    setCollections(collectionsResult.collections);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to load products.';
     if (!background || products.length === 0) {
@@ -84,7 +98,7 @@ export function prefetchShopData(): Promise<void> {
   return runLoad({ background: hasProducts });
 }
 
-/** Always sync latest products and collections from Shopify. */
+/** Sync the latest products and collections from Shopify. */
 export function refreshShopData(): Promise<void> {
   return runLoad({ background: true });
 }

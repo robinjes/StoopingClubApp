@@ -9,7 +9,7 @@ import Animated, {
 
 import { useTheme } from '../../context/ThemeContext';
 
-const STOOPY_SIZE = 132;
+const STOOPY_SIZE = 220;
 const POP_SPRING = { damping: 11, stiffness: 170, mass: 0.75 };
 
 type OrderCelebrationHeroProps = {
@@ -71,10 +71,10 @@ export default function OrderCelebrationHero({ message }: OrderCelebrationHeroPr
 
       <Animated.View style={stoopyStyle}>
         <Image
-          source={require('../../../assets/stoopylogo.png')}
+          source={require('../../../assets/stoopy-order-celebration.png')}
           style={{ width: STOOPY_SIZE, height: STOOPY_SIZE }}
           resizeMode="contain"
-          accessibilityLabel="Celebrating Stoopy"
+          accessibilityLabel="Celebrating Stoopy with arms raised"
         />
       </Animated.View>
     </View>
