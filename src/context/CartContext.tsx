@@ -19,7 +19,7 @@ import {
 } from '../services/shopify';
 import type { ShopifyCart } from '../services/shopify';
 
-const CART_ID_KEY = 'shopify_cart_id';
+export const CART_ID_KEY = 'shopify_cart_id';
 
 type CartContextValue = {
   cart: ShopifyCart | null;

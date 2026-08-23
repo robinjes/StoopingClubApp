@@ -8,7 +8,7 @@ import {
 import { customerAccountFetch } from '../services/shopify/customerApi';
 import type { CustomerAddress, CustomerOrder, CustomerProfile } from '../types/customer';
 
-const LOCAL_PICKUP_CONFIRMATIONS_KEY = 'local_pickup_confirmations';
+export const LOCAL_PICKUP_CONFIRMATIONS_KEY = 'local_pickup_confirmations';
 
 type MetafieldNode = {
   namespace: string;

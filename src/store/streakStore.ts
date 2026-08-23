@@ -8,8 +8,8 @@ import {
   getLocalDateString,
 } from '../utils/streakDates';
 
-const STREAK_STORAGE_KEY = 'app_open_streak_v2';
-const LEGACY_STREAK_STORAGE_KEY = 'app_open_streak_v1';
+export const STREAK_STORAGE_KEY = 'app_open_streak_v2';
+export const LEGACY_STREAK_STORAGE_KEY = 'app_open_streak_v1';
 const MAX_ACTIVE_DATES = 400;
 
 export const MAX_FREEZES = 2;

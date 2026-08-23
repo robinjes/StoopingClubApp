@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
-const RECENTLY_VIEWED_KEY = 'recently_viewed_products_v2';
-const V1_RECENTLY_VIEWED_KEY = 'recently_viewed_products';
-const LEGACY_RECENTLY_VIEWED_KEY = 'recently_viewed_product_ids';
+export const RECENTLY_VIEWED_KEY = 'recently_viewed_products_v2';
+export const V1_RECENTLY_VIEWED_KEY = 'recently_viewed_products';
+export const LEGACY_RECENTLY_VIEWED_KEY = 'recently_viewed_product_ids';
 export const MAX_RECENTLY_VIEWED_ITEMS = 25;
 
 export type RecentlyViewedEntry = {
