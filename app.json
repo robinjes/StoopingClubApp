@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.stoopingclubfoundation.berkeley",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "infoPlist": {
         "NSUserNotificationsUsageDescription": "Stooping Club sends Friday order reminders and Sunday pickup reminders.",
         "CFBundleURLTypes": [
