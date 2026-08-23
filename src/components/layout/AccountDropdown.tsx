@@ -54,8 +54,8 @@ export default function AccountDropdown({
               <>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Open profile"
-                  onPress={() => handleNavigate('Profile')}
+                  accessibilityLabel="Open account"
+                  onPress={() => handleNavigate('Orders')}
                 >
                   <Text className="text-lg font-bold" style={{ color: colors.text }}>
                     Hi {greetingName}
@@ -67,20 +67,19 @@ export default function AccountDropdown({
                   ) : null}
                 </Pressable>
 
+                <ThemeToggleSwitch colors={colors} isDark={isDark} onToggle={toggleTheme} />
+
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Open orders"
-                  className="mt-4 flex-row items-center gap-2 rounded-full border py-3 pl-4 pr-4"
-                  style={{ borderColor: colors.border }}
-                  onPress={() => handleNavigate('Orders')}
+                  accessibilityLabel="Delete account"
+                  className="mt-4 items-center rounded-full border py-3"
+                  style={{ borderColor: '#DC2626' }}
+                  onPress={() => handleNavigate('Profile')}
                 >
-                  <Ionicons name="receipt-outline" size={18} color={colors.text} />
-                  <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-                    Orders
+                  <Text className="text-sm font-semibold" style={{ color: '#DC2626' }}>
+                    Delete Account
                   </Text>
                 </Pressable>
-
-                <ThemeToggleSwitch colors={colors} isDark={isDark} onToggle={toggleTheme} />
               </>
             ) : (
               <>
@@ -90,13 +89,13 @@ export default function AccountDropdown({
 
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Open profile"
+                  accessibilityLabel="Open account"
                   className="mb-4 flex-row items-center justify-center gap-2 rounded-full py-3.5"
                   style={{ backgroundColor: colors.brandDark }}
-                  onPress={() => handleNavigate('Profile')}
+                  onPress={() => handleNavigate('Orders')}
                 >
                   <Ionicons name="person-outline" size={18} color="#FFFFFF" />
-                  <Text className="text-sm font-semibold text-white">Profile</Text>
+                  <Text className="text-sm font-semibold text-white">Account</Text>
                 </Pressable>
 
                 <ThemeToggleSwitch colors={colors} isDark={isDark} onToggle={toggleTheme} />
