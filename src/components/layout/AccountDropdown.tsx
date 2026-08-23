@@ -55,7 +55,7 @@ export default function AccountDropdown({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Open profile"
-                  onPress={() => handleNavigate('Orders')}
+                  onPress={() => handleNavigate('Profile')}
                 >
                   <Text className="text-lg font-bold" style={{ color: colors.text }}>
                     Hi {greetingName}
@@ -65,6 +65,19 @@ export default function AccountDropdown({
                       {profile.email}
                     </Text>
                   ) : null}
+                </Pressable>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Open orders"
+                  className="mt-4 flex-row items-center gap-2 rounded-full border py-3 pl-4 pr-4"
+                  style={{ borderColor: colors.border }}
+                  onPress={() => handleNavigate('Orders')}
+                >
+                  <Ionicons name="receipt-outline" size={18} color={colors.text} />
+                  <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+                    Orders
+                  </Text>
                 </Pressable>
 
                 <ThemeToggleSwitch colors={colors} isDark={isDark} onToggle={toggleTheme} />
@@ -80,7 +93,7 @@ export default function AccountDropdown({
                   accessibilityLabel="Open profile"
                   className="mb-4 flex-row items-center justify-center gap-2 rounded-full py-3.5"
                   style={{ backgroundColor: colors.brandDark }}
-                  onPress={() => handleNavigate('Orders')}
+                  onPress={() => handleNavigate('Profile')}
                 >
                   <Ionicons name="person-outline" size={18} color="#FFFFFF" />
                   <Text className="text-sm font-semibold text-white">Profile</Text>
