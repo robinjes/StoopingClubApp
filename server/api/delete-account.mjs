@@ -17,13 +17,10 @@
  * Auth: client credentials grant
  *   https://shopify.dev/docs/apps/build/authentication-authorization/client-credentials-grant
  *
- * Flow:
- *   1. The app sends POST with "Authorization: Bearer <customer access token>".
- *   2. We verify the token against Shopify's Customer Account API.
- *   3. We exchange Client ID + Secret for a short-lived Admin access token,
- *      cache it (~24h), and call the Admin API with X-Shopify-Access-Token.
- *   4. No orders -> customerDelete; has orders -> customerRequestDataErasure.
- *   5. Respond { "status": "deleted" } or { "status": "erasure_requested" }.
+ * Accepted requests:
+ *   A) Authorization: Bearer <customer access token>
+ *   B) JSON body { email, confirm: true, source: "webview_account" }
+ *      for users signed into the embedded Shopify account WebView only.
  */
 
 const STORE_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN ?? '';
@@ -138,6 +135,93 @@ async function adminGraphql(query, variables) {
   return json.data;
 }
 
+async function findCustomerIdByEmail(email) {
+  const data = await adminGraphql(
+    `query CustomerByEmail($query: String!) {
+      customers(first: 1, query: $query) {
+        nodes {
+          id
+          email
+          numberOfOrders
+        }
+      }
+    }`,
+    { query: `email:${email}` },
+  );
+
+  const customer = data.customers?.nodes?.[0];
+  if (!customer?.id) {
+    return null;
+  }
+
+  // Prefer an exact email match when Shopify returns a near-match.
+  if (customer.email && customer.email.trim().toLowerCase() !== email) {
+    return null;
+  }
+
+  return customer;
+}
+
+async function deleteOrEraseCustomer(customerId, numberOfOrders) {
+  const hasOrders = Number(numberOfOrders) > 0;
+
+  if (!hasOrders) {
+    const deleteData = await adminGraphql(
+      `mutation DeleteCustomer($input: CustomerDeleteInput!) {
+        customerDelete(input: $input) {
+          deletedCustomerId
+          userErrors {
+            field
+            message
+          }
+        }
+      }`,
+      { input: { id: customerId } },
+    );
+
+    const deleteErrors = deleteData.customerDelete?.userErrors ?? [];
+    if (deleteErrors.length > 0) {
+      throw new Error(deleteErrors[0].message);
+    }
+
+    return 'deleted';
+  }
+
+  const erasureData = await adminGraphql(
+    `mutation RequestErasure($customerId: ID!) {
+      customerRequestDataErasure(customerId: $customerId) {
+        customerId
+        userErrors {
+          field
+          message
+        }
+      }
+    }`,
+    { customerId },
+  );
+
+  const erasureErrors = erasureData.customerRequestDataErasure?.userErrors ?? [];
+  if (erasureErrors.length > 0) {
+    throw new Error(erasureErrors[0].message);
+  }
+
+  return 'erasure_requested';
+}
+
+function readJsonBody(req) {
+  if (!req.body) {
+    return {};
+  }
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch {
+      return {};
+    }
+  }
+  return req.body;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
@@ -151,81 +235,59 @@ export default async function handler(req, res) {
 
   const authHeader = req.headers.authorization ?? '';
   const customerAccessToken = authHeader.replace(/^Bearer\s+/i, '').trim();
-  if (!customerAccessToken) {
-    res.status(401).json({ error: 'Missing customer access token.' });
-    return;
-  }
+  const body = readJsonBody(req);
+  const email =
+    typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const emailConfirmed = body.confirm === true && body.source === 'webview_account';
 
   try {
-    // Authenticate: the token must resolve to a real customer of this shop.
-    const customerId = await fetchCustomerIdFromToken(customerAccessToken);
-    if (!customerId) {
-      res.status(401).json({ error: 'Invalid or expired session. Sign in again.' });
-      return;
-    }
+    let customerId = null;
+    let numberOfOrders = 0;
 
-    const customerData = await adminGraphql(
-      `query CustomerOrderCount($id: ID!) {
-        customer(id: $id) {
-          id
-          numberOfOrders
-        }
-      }`,
-      { id: customerId },
-    );
-
-    const customer = customerData.customer;
-    if (!customer) {
-      res.status(404).json({ error: 'Customer not found.' });
-      return;
-    }
-
-    const hasOrders = Number(customer.numberOfOrders) > 0;
-
-    if (!hasOrders) {
-      const deleteData = await adminGraphql(
-        `mutation DeleteCustomer($input: CustomerDeleteInput!) {
-          customerDelete(input: $input) {
-            deletedCustomerId
-            userErrors {
-              field
-              message
-            }
-          }
-        }`,
-        { input: { id: customerId } },
-      );
-
-      const deleteErrors = deleteData.customerDelete?.userErrors ?? [];
-      if (deleteErrors.length > 0) {
-        throw new Error(deleteErrors[0].message);
+    if (customerAccessToken) {
+      customerId = await fetchCustomerIdFromToken(customerAccessToken);
+      if (!customerId) {
+        res.status(401).json({ error: 'Invalid or expired session. Sign in again.' });
+        return;
       }
 
-      res.status(200).json({ status: 'deleted' });
+      const customerData = await adminGraphql(
+        `query CustomerOrderCount($id: ID!) {
+          customer(id: $id) {
+            id
+            numberOfOrders
+          }
+        }`,
+        { id: customerId },
+      );
+
+      const customer = customerData.customer;
+      if (!customer) {
+        res.status(404).json({ error: 'Customer not found.' });
+        return;
+      }
+
+      numberOfOrders = customer.numberOfOrders;
+    } else if (email && emailConfirmed && email.includes('@')) {
+      // WebView-only path: customer is signed into the embedded Shopify account
+      // UI; the app detected their email from that session and confirmed delete.
+      const customer = await findCustomerIdByEmail(email);
+      if (!customer) {
+        res.status(404).json({ error: 'No Shopify customer found for that email.' });
+        return;
+      }
+      customerId = customer.id;
+      numberOfOrders = customer.numberOfOrders;
+    } else {
+      res.status(401).json({
+        error:
+          'Sign in to your account in Account first, then try Delete Account again.',
+      });
       return;
     }
 
-    // Customers with orders can't be hard-deleted; Shopify's data-erasure
-    // request redacts their personal data instead (GDPR/CCPA flow).
-    const erasureData = await adminGraphql(
-      `mutation RequestErasure($customerId: ID!) {
-        customerRequestDataErasure(customerId: $customerId) {
-          customerId
-          userErrors {
-            field
-            message
-          }
-        }
-      }`,
-      { customerId },
-    );
-
-    const erasureErrors = erasureData.customerRequestDataErasure?.userErrors ?? [];
-    if (erasureErrors.length > 0) {
-      throw new Error(erasureErrors[0].message);
-    }
-
-    res.status(200).json({ status: 'erasure_requested' });
+    const status = await deleteOrEraseCustomer(customerId, numberOfOrders);
+    res.status(200).json({ status });
   } catch (error) {
     if (error instanceof ShopNotPermittedError) {
       res.status(501).json({

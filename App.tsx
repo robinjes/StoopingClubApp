@@ -13,6 +13,7 @@ import { CartProvider } from './src/context/CartContext';
 import { CustomerProvider } from './src/context/CustomerContext';
 import { FeedbackProvider } from './src/context/FeedbackContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { WebAccountSessionProvider } from './src/context/WebAccountSessionContext';
 import { usePickupReminders } from './src/hooks/usePickupReminders';
 import { useNotificationFeedback } from './src/hooks/useNotificationFeedback';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -27,12 +28,14 @@ function AppContent() {
 
   return (
     <CustomerProvider>
-      <CartProvider>
-        <NavigationContainer ref={rootNavigationRef} theme={navigationTheme}>
-          <AppNavigator />
-          <StatusBar style={isDark ? 'light' : 'dark'} />
-        </NavigationContainer>
-      </CartProvider>
+      <WebAccountSessionProvider>
+        <CartProvider>
+          <NavigationContainer ref={rootNavigationRef} theme={navigationTheme}>
+            <AppNavigator />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+          </NavigationContainer>
+        </CartProvider>
+      </WebAccountSessionProvider>
     </CustomerProvider>
   );
 }

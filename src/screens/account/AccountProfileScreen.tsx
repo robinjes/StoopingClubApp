@@ -1,6 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
@@ -10,24 +8,23 @@ import { useCustomer } from '../../context/CustomerContext';
 import { useFeedback } from '../../context/FeedbackContext';
 import { useOverlay } from '../../context/OverlayContext';
 import { useTheme } from '../../context/ThemeContext';
-import type { AccountStackParamList } from '../../navigation/stacks/AccountStack';
+import { useWebAccountSession } from '../../context/WebAccountSessionContext';
 import {
   clearLocalUserData,
   requestAccountDeletion,
+  requestAccountDeletionByEmail,
 } from '../../services/account/accountDeletion';
 import { fetchCustomerProfile, getValidCustomerAccessToken } from '../../services/shopify/customerAuth';
 import type { CustomerProfile } from '../../types/customer';
 import { getCustomerFullName } from '../../utils/customerDisplay';
 
-type ProfileNavigation = NativeStackNavigationProp<AccountStackParamList, 'Profile'>;
-
 export default function AccountProfileScreen() {
   const { colors } = useTheme();
-  const { closeOverlay } = useOverlay();
+  const { closeOverlay, openAccount } = useOverlay();
   const { soundsEnabled, setSoundsEnabled } = useFeedback();
-  const navigation = useNavigation<ProfileNavigation>();
   const { isConfigured, logout, error: contextError } = useCustomer();
   const { clearCart } = useCart();
+  const { webAccountEmail, clearWebAccountSession } = useWebAccountSession();
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -61,18 +58,38 @@ export default function AccountProfileScreen() {
 
   async function handleSignOut() {
     await logout();
+    clearWebAccountSession();
     setProfile(null);
     closeOverlay();
   }
 
   function confirmDeleteAccount() {
+    const emailForMessage = profile?.email ?? webAccountEmail;
     Alert.alert(
       'Delete account?',
-      'This permanently deletes your Stooping Club account and personal data. This cannot be undone.',
+      emailForMessage
+        ? `This permanently deletes ${emailForMessage} and personal data. This cannot be undone.`
+        : 'This permanently deletes your Stooping Club account and personal data. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: () => void handleDeleteAccount() },
       ],
+    );
+  }
+
+  async function finishDeletion(result: 'deleted' | 'erasure_requested') {
+    await clearLocalUserData();
+    await clearCart();
+    await logout();
+    clearWebAccountSession();
+    setProfile(null);
+
+    Alert.alert(
+      result === 'deleted' ? 'Account deleted' : 'Deletion requested',
+      result === 'deleted'
+        ? 'Your account and personal data have been deleted. You are now signed out.'
+        : 'Because your account has order history, we submitted a data-erasure request to our store provider. Your data will be removed within a few days. You are now signed out.',
+      [{ text: 'OK', onPress: () => closeOverlay() }],
     );
   }
 
@@ -82,25 +99,20 @@ export default function AccountProfileScreen() {
 
     try {
       const accessToken = await getValidCustomerAccessToken();
-      if (!accessToken) {
-        throw new Error('Your session has expired. Sign in again to delete your account.');
+      if (accessToken) {
+        const result = await requestAccountDeletion(accessToken);
+        await finishDeletion(result);
+        return;
       }
 
-      // Server-side call: verifies the customer token, then deletes the
-      // Shopify customer (no orders) or files a data-erasure request (has orders).
-      const result = await requestAccountDeletion(accessToken);
+      if (webAccountEmail) {
+        const result = await requestAccountDeletionByEmail(webAccountEmail);
+        await finishDeletion(result);
+        return;
+      }
 
-      await clearLocalUserData();
-      await clearCart();
-      await logout();
-      setProfile(null);
-
-      Alert.alert(
-        result === 'deleted' ? 'Account deleted' : 'Deletion requested',
-        result === 'deleted'
-          ? 'Your account and personal data have been deleted. You are now signed out.'
-          : 'Because your account has order history, we submitted a data-erasure request to our store provider. Your data will be removed within a few days. You are now signed out.',
-        [{ text: 'OK', onPress: () => closeOverlay() }],
+      throw new Error(
+        'Open Account, sign in, then open the Profile tab so we can detect your email before deleting.',
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not delete your account.';
@@ -111,6 +123,8 @@ export default function AccountProfileScreen() {
   }
 
   const displayError = error ?? contextError;
+  const canDelete = Boolean(profile || webAccountEmail);
+  const displayEmail = profile?.email ?? webAccountEmail;
 
   return (
     <ScreenLayout showBack onBack={() => closeOverlay()}>
@@ -143,106 +157,120 @@ export default function AccountProfileScreen() {
           <Text className="mt-4 text-sm text-red-600">{displayError}</Text>
         ) : null}
 
-        {!isLoading && !profile ? (
+        {!isLoading && !profile && !webAccountEmail ? (
           <View className="mt-10 items-center">
             <Ionicons name="person-circle-outline" size={72} color={colors.textMuted} />
             <Text className="mt-4 text-center text-base leading-6" style={{ color: colors.textMuted }}>
-              Sign in to view your profile.
+              Sign in through Account first. Then come back here to delete your account.
             </Text>
             <Pressable
               className="mt-6 rounded-full px-8 py-3.5"
               style={{ backgroundColor: colors.brandDark }}
-              onPress={() => navigation.navigate('SignInShop')}
+              onPress={() => openAccount('Orders')}
             >
-              <Text className="font-semibold text-white">Sign In</Text>
+              <Text className="font-semibold text-white">Open Account</Text>
             </Pressable>
           </View>
         ) : null}
 
-        {!isLoading && profile ? (
+        {!isLoading && (profile || webAccountEmail) ? (
           <View className="mt-6">
-            <View
-              className="mb-4 rounded-3xl border px-5 py-4"
-              style={{ borderColor: colors.border, backgroundColor: colors.background }}
-            >
-              <View className="flex-row items-center justify-between">
-                <View className="flex-1 pr-4">
-                  <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-                    UI sounds
-                  </Text>
-                  <Text className="mt-1 text-xs leading-5" style={{ color: colors.textMuted }}>
-                    Subtle taps, swooshes, and chimes. Respects silent mode.
-                  </Text>
+            {profile ? (
+              <View
+                className="mb-4 rounded-3xl border px-5 py-4"
+                style={{ borderColor: colors.border, backgroundColor: colors.background }}
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1 pr-4">
+                    <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+                      UI sounds
+                    </Text>
+                    <Text className="mt-1 text-xs leading-5" style={{ color: colors.textMuted }}>
+                      Subtle taps, swooshes, and chimes. Respects silent mode.
+                    </Text>
+                  </View>
+                  <Switch
+                    value={soundsEnabled}
+                    onValueChange={setSoundsEnabled}
+                    trackColor={{ false: colors.border, true: colors.brand }}
+                    thumbColor="#FFFFFF"
+                  />
                 </View>
-                <Switch
-                  value={soundsEnabled}
-                  onValueChange={setSoundsEnabled}
-                  trackColor={{ false: colors.border, true: colors.brand }}
-                  thumbColor="#FFFFFF"
-                />
               </View>
-            </View>
+            ) : null}
 
             <View
               className="rounded-3xl border px-5 py-6"
               style={{ borderColor: colors.border, backgroundColor: colors.background }}
             >
-              <Text className="text-sm font-medium" style={{ color: colors.brand }}>
-                Name
-              </Text>
-              <Text
-                className="mt-2 text-xl"
-                style={{ fontFamily: 'Georgia', color: colors.text }}
-              >
-                {getCustomerFullName(profile)}
-              </Text>
+              {profile ? (
+                <>
+                  <Text className="text-sm font-medium" style={{ color: colors.brand }}>
+                    Name
+                  </Text>
+                  <Text
+                    className="mt-2 text-xl"
+                    style={{ fontFamily: 'Georgia', color: colors.text }}
+                  >
+                    {getCustomerFullName(profile)}
+                  </Text>
+                </>
+              ) : (
+                <Text className="text-sm leading-5" style={{ color: colors.textMuted }}>
+                  Signed in through the Shopify account page in the app.
+                </Text>
+              )}
 
               <Text className="mt-6 text-sm font-medium" style={{ color: colors.brand }}>
                 Email
               </Text>
               <Text className="mt-2 text-base" style={{ color: colors.text }}>
-                {profile.email ?? '—'}
+                {displayEmail ?? '—'}
               </Text>
             </View>
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Sign out"
-              className="mt-8 items-center self-center rounded-full px-8 py-3.5"
-              style={{ backgroundColor: colors.brandDark }}
-              disabled={isDeleting}
-              onPress={() => void handleSignOut()}
-            >
-              <Text className="text-sm font-semibold text-white">Sign Out</Text>
-            </Pressable>
-
-            <View
-              className="mt-10 rounded-3xl border px-5 py-5"
-              style={{ borderColor: '#FECACA', backgroundColor: '#FEF2F2' }}
-            >
-              <Text className="text-sm font-semibold" style={{ color: '#B91C1C' }}>
-                Delete account
-              </Text>
-              <Text className="mt-1 text-xs leading-5" style={{ color: '#991B1B' }}>
-                Permanently deletes your account and personal data. This cannot be undone.
-              </Text>
+            {profile ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Delete account"
-                className="mt-4 items-center self-start rounded-full border px-6 py-2.5"
-                style={{ borderColor: '#DC2626', opacity: isDeleting ? 0.6 : 1 }}
+                accessibilityLabel="Sign out"
+                className="mt-8 items-center self-center rounded-full px-8 py-3.5"
+                style={{ backgroundColor: colors.brandDark }}
                 disabled={isDeleting}
-                onPress={confirmDeleteAccount}
+                onPress={() => void handleSignOut()}
               >
-                {isDeleting ? (
-                  <ActivityIndicator size="small" color="#DC2626" />
-                ) : (
-                  <Text className="text-sm font-semibold" style={{ color: '#DC2626' }}>
-                    Delete Account
-                  </Text>
-                )}
+                <Text className="text-sm font-semibold text-white">Sign Out</Text>
               </Pressable>
-            </View>
+            ) : null}
+
+            {canDelete ? (
+              <View
+                className="mt-10 rounded-3xl border px-5 py-5"
+                style={{ borderColor: '#FECACA', backgroundColor: '#FEF2F2' }}
+              >
+                <Text className="text-sm font-semibold" style={{ color: '#B91C1C' }}>
+                  Delete account
+                </Text>
+                <Text className="mt-1 text-xs leading-5" style={{ color: '#991B1B' }}>
+                  Permanently deletes your account and personal data. This cannot be undone.
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete account"
+                  className="mt-4 items-center self-start rounded-full border px-6 py-2.5"
+                  style={{ borderColor: '#DC2626', opacity: isDeleting ? 0.6 : 1 }}
+                  disabled={isDeleting}
+                  onPress={confirmDeleteAccount}
+                >
+                  {isDeleting ? (
+                    <ActivityIndicator size="small" color="#DC2626" />
+                  ) : (
+                    <Text className="text-sm font-semibold" style={{ color: '#DC2626' }}>
+                      Delete Account
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            ) : null}
           </View>
         ) : null}
       </ScrollView>

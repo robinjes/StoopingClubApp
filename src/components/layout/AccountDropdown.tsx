@@ -68,18 +68,6 @@ export default function AccountDropdown({
                 </Pressable>
 
                 <ThemeToggleSwitch colors={colors} isDark={isDark} onToggle={toggleTheme} />
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete account"
-                  className="mt-4 items-center rounded-full border py-3"
-                  style={{ borderColor: '#DC2626' }}
-                  onPress={() => handleNavigate('Profile')}
-                >
-                  <Text className="text-sm font-semibold" style={{ color: '#DC2626' }}>
-                    Delete Account
-                  </Text>
-                </Pressable>
               </>
             ) : (
               <>
@@ -101,6 +89,18 @@ export default function AccountDropdown({
                 <ThemeToggleSwitch colors={colors} isDark={isDark} onToggle={toggleTheme} />
               </>
             )}
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Delete account"
+              className="mt-4 items-center rounded-full border py-3"
+              style={{ borderColor: '#DC2626' }}
+              onPress={() => handleNavigate('Profile')}
+            >
+              <Text className="text-sm font-semibold" style={{ color: '#DC2626' }}>
+                Delete Account
+              </Text>
+            </Pressable>
           </Pressable>
         </View>
       </Pressable>

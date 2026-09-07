@@ -31,28 +31,37 @@ export function isAccountDeletionConfigured(): boolean {
   return ACCOUNT_DELETION_URL.startsWith('https://');
 }
 
-/**
- * Asks the backend to delete the signed-in Shopify customer.
- * The backend verifies the customer token, then either deletes the customer
- * (no orders) or files a Shopify data-erasure request (has orders).
- */
-export async function requestAccountDeletion(
-  customerAccessToken: string,
-): Promise<AccountDeletionResult> {
+async function postDeletionRequest(init: {
+  accessToken?: string;
+  email?: string;
+}): Promise<AccountDeletionResult> {
   if (!isAccountDeletionConfigured()) {
     throw new Error(
       'Account deletion is not available right now. Please contact support@stoopingclub.org.',
     );
   }
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (init.accessToken) {
+    headers.Authorization = `Bearer ${init.accessToken}`;
+  }
+
   let response: Response;
   try {
     response = await fetch(ACCOUNT_DELETION_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${customerAccessToken}`,
-      },
+      headers,
+      body: JSON.stringify(
+        init.email
+          ? {
+              email: init.email,
+              confirm: true,
+              source: 'webview_account',
+            }
+          : {},
+      ),
     });
   } catch {
     throw new Error('Could not reach the server. Check your connection and try again.');
@@ -74,6 +83,30 @@ export async function requestAccountDeletion(
   }
 
   throw new Error('The server returned an unexpected response. Try again.');
+}
+
+/**
+ * Asks the backend to delete the signed-in Shopify customer using their
+ * Customer Account API access token.
+ */
+export async function requestAccountDeletion(
+  customerAccessToken: string,
+): Promise<AccountDeletionResult> {
+  return postDeletionRequest({ accessToken: customerAccessToken });
+}
+
+/**
+ * Deletes via the embedded Shopify account WebView session email when the app
+ * does not have a Customer Account API OAuth token.
+ */
+export async function requestAccountDeletionByEmail(
+  email: string,
+): Promise<AccountDeletionResult> {
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed.includes('@')) {
+    throw new Error('Could not determine which account to delete. Open Account and sign in first.');
+  }
+  return postDeletionRequest({ email: trimmed });
 }
 
 /**
