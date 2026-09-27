@@ -247,7 +247,7 @@ export default function StoopyGuide() {
     <>
       {menuOpen ? (
         <Pressable
-          style={[StyleSheet.absoluteFillObject, styles.backdrop]}
+          style={[StyleSheet.absoluteFill, styles.backdrop]}
           onPress={() => setMenuOpen(false)}
           accessibilityLabel="Close Explore menu"
         />
