@@ -5,6 +5,7 @@ import ThemeToggleSwitch from './ThemeToggleSwitch';
 import { useCustomer } from '../../context/CustomerContext';
 import { useOverlay, type AccountRoute } from '../../context/OverlayContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useWebAccountSession } from '../../context/WebAccountSessionContext';
 import { getCustomerGreetingName } from '../../utils/customerDisplay';
 
 type AccountDropdownProps = {
@@ -22,14 +23,25 @@ export default function AccountDropdown({
 }: AccountDropdownProps) {
   const { colors, isDark, toggleTheme } = useTheme();
   const { openAccount } = useOverlay();
-  const { isAuthenticated, profile } = useCustomer();
+  const { isAuthenticated, profile, logout } = useCustomer();
+  const { webAccountEmail, clearWebAccountSession, requestWebSignOut } = useWebAccountSession();
+
+  const signedInEmail = webAccountEmail ?? profile?.email ?? null;
+  const isSignedIn = Boolean(isAuthenticated && profile) || Boolean(webAccountEmail);
+  const greetingName = getCustomerGreetingName(profile);
 
   function handleNavigate(route: AccountRoute) {
     onClose();
     openAccount(route);
   }
 
-  const greetingName = getCustomerGreetingName(profile);
+  async function handleSignOut() {
+    onClose();
+    await logout();
+    clearWebAccountSession();
+    requestWebSignOut();
+    openAccount('Orders');
+  }
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -50,7 +62,7 @@ export default function AccountDropdown({
           }}
         >
           <Pressable onPress={(event) => event.stopPropagation()}>
-            {isAuthenticated && profile ? (
+            {isSignedIn ? (
               <>
                 <Pressable
                   accessibilityRole="button"
@@ -58,16 +70,28 @@ export default function AccountDropdown({
                   onPress={() => handleNavigate('Orders')}
                 >
                   <Text className="text-lg font-bold" style={{ color: colors.text }}>
-                    Hi {greetingName}
+                    {greetingName ? `Hi ${greetingName}` : 'Account'}
                   </Text>
-                  {profile.email ? (
+                  {signedInEmail ? (
                     <Text className="mt-1 text-sm" style={{ color: colors.textMuted }}>
-                      {profile.email}
+                      {signedInEmail}
                     </Text>
                   ) : null}
                 </Pressable>
 
                 <ThemeToggleSwitch colors={colors} isDark={isDark} onToggle={toggleTheme} />
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Sign out"
+                  className="mt-4 items-center rounded-full border py-3"
+                  style={{ borderColor: colors.border }}
+                  onPress={() => void handleSignOut()}
+                >
+                  <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+                    Sign Out
+                  </Text>
+                </Pressable>
               </>
             ) : (
               <>

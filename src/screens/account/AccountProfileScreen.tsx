@@ -24,7 +24,7 @@ export default function AccountProfileScreen() {
   const { soundsEnabled, setSoundsEnabled } = useFeedback();
   const { isConfigured, logout, error: contextError } = useCustomer();
   const { clearCart } = useCart();
-  const { webAccountEmail, clearWebAccountSession } = useWebAccountSession();
+  const { webAccountEmail, clearWebAccountSession, requestWebSignOut } = useWebAccountSession();
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -60,11 +60,15 @@ export default function AccountProfileScreen() {
     await logout();
     clearWebAccountSession();
     setProfile(null);
-    closeOverlay();
+    // Clear the embedded Shopify WebView session cookies as well.
+    requestWebSignOut();
+    openAccount('Orders');
   }
 
   function confirmDeleteAccount() {
-    const emailForMessage = profile?.email ?? webAccountEmail;
+    // Prefer the live Shopify Profile email (WebView) when present so a stale
+    // OAuth profile or half-finished login email cannot delete the wrong account.
+    const emailForMessage = webAccountEmail ?? profile?.email ?? null;
     Alert.alert(
       'Delete account?',
       emailForMessage
@@ -82,6 +86,7 @@ export default function AccountProfileScreen() {
     await clearCart();
     await logout();
     clearWebAccountSession();
+    requestWebSignOut();
     setProfile(null);
 
     Alert.alert(
@@ -98,21 +103,31 @@ export default function AccountProfileScreen() {
     setError(null);
 
     try {
-      const accessToken = await getValidCustomerAccessToken();
-      if (accessToken) {
-        const result = await requestAccountDeletion(accessToken);
-        await finishDeletion(result);
-        return;
-      }
-
+      // WebView session is the source of truth for "signed in through Account".
       if (webAccountEmail) {
         const result = await requestAccountDeletionByEmail(webAccountEmail);
         await finishDeletion(result);
         return;
       }
 
+      const accessToken = await getValidCustomerAccessToken();
+      if (accessToken) {
+        try {
+          const result = await requestAccountDeletion(accessToken);
+          await finishDeletion(result);
+          return;
+        } catch (tokenError) {
+          // Fall through with a clearer message if OAuth token path fails.
+          const tokenMessage =
+            tokenError instanceof Error ? tokenError.message : 'Account deletion failed.';
+          if (/token|session|unauthorized|401/i.test(tokenMessage) === false) {
+            throw tokenError;
+          }
+        }
+      }
+
       throw new Error(
-        'Open Account, sign in, then open the Profile tab so we can detect your email before deleting.',
+        'Open Account, sign in, then open the Profile tab so we can detect your current email before deleting.',
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not delete your account.';
@@ -123,8 +138,10 @@ export default function AccountProfileScreen() {
   }
 
   const displayError = error ?? contextError;
-  const canDelete = Boolean(profile || webAccountEmail);
-  const displayEmail = profile?.email ?? webAccountEmail;
+  const isSignedIn = Boolean(profile || webAccountEmail);
+  const canDelete = isSignedIn;
+  // Prefer WebView Profile email so abandoned login emails do not stick.
+  const displayEmail = webAccountEmail ?? profile?.email ?? null;
 
   return (
     <ScreenLayout showBack onBack={() => closeOverlay()}>
@@ -157,11 +174,12 @@ export default function AccountProfileScreen() {
           <Text className="mt-4 text-sm text-red-600">{displayError}</Text>
         ) : null}
 
-        {!isLoading && !profile && !webAccountEmail ? (
+        {!isLoading && !isSignedIn ? (
           <View className="mt-10 items-center">
             <Ionicons name="person-circle-outline" size={72} color={colors.textMuted} />
             <Text className="mt-4 text-center text-base leading-6" style={{ color: colors.textMuted }}>
-              Sign in through Account first. Then come back here to delete your account.
+              Sign in through Account, open the Profile tab, then come back here to manage or delete
+              your account.
             </Text>
             <Pressable
               className="mt-6 rounded-full px-8 py-3.5"
@@ -173,7 +191,7 @@ export default function AccountProfileScreen() {
           </View>
         ) : null}
 
-        {!isLoading && (profile || webAccountEmail) ? (
+        {!isLoading && isSignedIn ? (
           <View className="mt-6">
             {profile ? (
               <View
@@ -227,20 +245,24 @@ export default function AccountProfileScreen() {
               <Text className="mt-2 text-base" style={{ color: colors.text }}>
                 {displayEmail ?? '—'}
               </Text>
+              {!webAccountEmail && profile?.email ? (
+                <Text className="mt-2 text-xs leading-5" style={{ color: colors.textMuted }}>
+                  Tip: open Account → Profile once so we refresh the email from your current Shopify
+                  session.
+                </Text>
+              ) : null}
             </View>
 
-            {profile ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Sign out"
-                className="mt-8 items-center self-center rounded-full px-8 py-3.5"
-                style={{ backgroundColor: colors.brandDark }}
-                disabled={isDeleting}
-                onPress={() => void handleSignOut()}
-              >
-                <Text className="text-sm font-semibold text-white">Sign Out</Text>
-              </Pressable>
-            ) : null}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              className="mt-8 items-center self-center rounded-full px-8 py-3.5"
+              style={{ backgroundColor: colors.brandDark }}
+              disabled={isDeleting}
+              onPress={() => void handleSignOut()}
+            >
+              <Text className="text-sm font-semibold text-white">Sign Out</Text>
+            </Pressable>
 
             {canDelete ? (
               <View

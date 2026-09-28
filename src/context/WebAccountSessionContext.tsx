@@ -8,10 +8,14 @@ import {
 } from 'react';
 
 type WebAccountSessionValue = {
-  /** Email detected from the embedded Shopify account WebView while signed in. */
+  /** Email detected from the embedded Shopify account Profile page. */
   webAccountEmail: string | null;
+  /** When true, Orders WebView should load the Shopify logout URL then clear. */
+  pendingWebSignOut: boolean;
   setWebAccountEmail: (email: string | null) => void;
   clearWebAccountSession: () => void;
+  requestWebSignOut: () => void;
+  consumeWebSignOut: () => void;
 };
 
 const WebAccountSessionContext = createContext<WebAccountSessionValue | null>(null);
@@ -28,6 +32,7 @@ export function normalizeDetectedEmail(value: string | null | undefined): string
 
 export function WebAccountSessionProvider({ children }: { children: ReactNode }) {
   const [webAccountEmail, setWebAccountEmailState] = useState<string | null>(null);
+  const [pendingWebSignOut, setPendingWebSignOut] = useState(false);
 
   const setWebAccountEmail = useCallback((email: string | null) => {
     setWebAccountEmailState(normalizeDetectedEmail(email));
@@ -37,13 +42,32 @@ export function WebAccountSessionProvider({ children }: { children: ReactNode })
     setWebAccountEmailState(null);
   }, []);
 
+  const requestWebSignOut = useCallback(() => {
+    setWebAccountEmailState(null);
+    setPendingWebSignOut(true);
+  }, []);
+
+  const consumeWebSignOut = useCallback(() => {
+    setPendingWebSignOut(false);
+  }, []);
+
   const value = useMemo(
     () => ({
       webAccountEmail,
+      pendingWebSignOut,
       setWebAccountEmail,
       clearWebAccountSession,
+      requestWebSignOut,
+      consumeWebSignOut,
     }),
-    [webAccountEmail, setWebAccountEmail, clearWebAccountSession],
+    [
+      webAccountEmail,
+      pendingWebSignOut,
+      setWebAccountEmail,
+      clearWebAccountSession,
+      requestWebSignOut,
+      consumeWebSignOut,
+    ],
   );
 
   return (
