@@ -209,8 +209,15 @@ async function deleteOrEraseCustomer(customerId, numberOfOrders) {
 }
 
 function readJsonBody(req) {
-  if (!req.body) {
+  if (req.body == null || req.body === '') {
     return {};
+  }
+  if (Buffer.isBuffer(req.body)) {
+    try {
+      return JSON.parse(req.body.toString('utf8'));
+    } catch {
+      return {};
+    }
   }
   if (typeof req.body === 'string') {
     try {
@@ -219,10 +226,23 @@ function readJsonBody(req) {
       return {};
     }
   }
-  return req.body;
+  if (typeof req.body === 'object') {
+    return req.body;
+  }
+  return {};
 }
 
 export default async function handler(req, res) {
+  // Lets us verify the email-deletion build is live after deploy.
+  if (req.method === 'GET') {
+    res.status(200).json({
+      ok: true,
+      version: 'delete-account-v2-email',
+      supports: ['bearer_token', 'webview_email'],
+    });
+    return;
+  }
+
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
     return;
@@ -244,7 +264,17 @@ export default async function handler(req, res) {
     let customerId = null;
     let numberOfOrders = 0;
 
-    if (customerAccessToken) {
+    // Prefer confirmed WebView email when present — Expo Go users often have no
+    // Customer Account OAuth token.
+    if (email && emailConfirmed && email.includes('@')) {
+      const customer = await findCustomerIdByEmail(email);
+      if (!customer) {
+        res.status(404).json({ error: 'No Shopify customer found for that email.' });
+        return;
+      }
+      customerId = customer.id;
+      numberOfOrders = customer.numberOfOrders;
+    } else if (customerAccessToken) {
       customerId = await fetchCustomerIdFromToken(customerAccessToken);
       if (!customerId) {
         res.status(401).json({ error: 'Invalid or expired session. Sign in again.' });
@@ -268,26 +298,17 @@ export default async function handler(req, res) {
       }
 
       numberOfOrders = customer.numberOfOrders;
-    } else if (email && emailConfirmed && email.includes('@')) {
-      // WebView-only path: customer is signed into the embedded Shopify account
-      // UI; the app detected their email from that session and confirmed delete.
-      const customer = await findCustomerIdByEmail(email);
-      if (!customer) {
-        res.status(404).json({ error: 'No Shopify customer found for that email.' });
-        return;
-      }
-      customerId = customer.id;
-      numberOfOrders = customer.numberOfOrders;
     } else {
       res.status(401).json({
         error:
-          'Sign in to your account in Account first, then try Delete Account again.',
+          'Sign in to your account in Account first, open the Profile tab, then try Delete Account again.',
+        version: 'delete-account-v2-email',
       });
       return;
     }
 
     const status = await deleteOrEraseCustomer(customerId, numberOfOrders);
-    res.status(200).json({ status });
+    res.status(200).json({ status, version: 'delete-account-v2-email' });
   } catch (error) {
     if (error instanceof ShopNotPermittedError) {
       res.status(501).json({
