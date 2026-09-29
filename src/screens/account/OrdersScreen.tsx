@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { WebView, type WebViewMessageEvent, type WebViewNavigation } from 'react-native-webview';
 
 import ScreenLayout from '../../components/layout/ScreenLayout';
@@ -12,6 +12,7 @@ import {
 import { CUSTOMER_ORDERS_URL } from '../../services/shopify/customerAuth';
 
 const ACCOUNT_ORIGIN = 'https://account.berkeleystooping.org';
+const ACCOUNT_PROFILE_URL = `${ACCOUNT_ORIGIN}/profile`;
 const ACCOUNT_LOGOUT_URL = `${ACCOUNT_ORIGIN}/logout`;
 
 /**
@@ -35,7 +36,6 @@ const DETECT_ACCOUNT_EMAIL_JS = `
       return { type: 'account_signed_out' };
     }
 
-    // Prefer the Contact / Email row on the Shopify Profile tab.
     var nodes = document.querySelectorAll('p, span, div, dt, dd, label, li');
     for (var i = 0; i < nodes.length; i++) {
       var node = nodes[i];
@@ -50,7 +50,6 @@ const DETECT_ACCOUNT_EMAIL_JS = `
       }
     }
 
-    // Readonly/disabled email fields on profile (not the login form).
     var inputs = document.querySelectorAll('input[type="email"], input[name*="email" i]');
     for (var j = 0; j < inputs.length; j++) {
       var input = inputs[j];
@@ -61,7 +60,6 @@ const DETECT_ACCOUNT_EMAIL_JS = `
       }
     }
 
-    // Only fall back to body text when Profile/Addresses UI is clearly present.
     if (/\\baddresses\\b/i.test(text) || /\\bno addresses added\\b/i.test(text) || /\\bcontact\\b/i.test(text)) {
       var bodyMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i);
       if (bodyMatch) {
@@ -101,27 +99,50 @@ const CLEAR_WEB_STORAGE_JS = `
 
 export default function OrdersScreen() {
   const { colors } = useTheme();
-  const { closeOverlay } = useOverlay();
+  const { closeOverlay, openAccount } = useOverlay();
   const {
+    webAccountEmail,
     setWebAccountEmail,
     clearWebAccountSession,
     pendingWebSignOut,
     consumeWebSignOut,
+    pendingDeleteIntent,
+    clearDeleteIntent,
   } = useWebAccountSession();
   const [isLoading, setIsLoading] = useState(true);
-  const [webUri, setWebUri] = useState<string>(CUSTOMER_ORDERS_URL);
+  const [webUri, setWebUri] = useState<string>(
+    pendingDeleteIntent ? ACCOUNT_PROFILE_URL : CUSTOMER_ORDERS_URL,
+  );
   const lastEmailRef = useRef<string | null>(null);
   const webViewRef = useRef<WebView>(null);
+  const autoOpenedDeleteRef = useRef(false);
 
   useEffect(() => {
     if (!pendingWebSignOut) {
       return;
     }
     lastEmailRef.current = null;
+    autoOpenedDeleteRef.current = false;
     clearWebAccountSession();
     setWebUri(ACCOUNT_LOGOUT_URL);
     consumeWebSignOut();
   }, [pendingWebSignOut, clearWebAccountSession, consumeWebSignOut]);
+
+  useEffect(() => {
+    if (pendingDeleteIntent) {
+      setWebUri(ACCOUNT_PROFILE_URL);
+      autoOpenedDeleteRef.current = false;
+    }
+  }, [pendingDeleteIntent]);
+
+  useEffect(() => {
+    if (!pendingDeleteIntent || !webAccountEmail || autoOpenedDeleteRef.current) {
+      return;
+    }
+    autoOpenedDeleteRef.current = true;
+    clearDeleteIntent();
+    openAccount('Profile');
+  }, [pendingDeleteIntent, webAccountEmail, clearDeleteIntent, openAccount]);
 
   function handleMessage(event: WebViewMessageEvent) {
     try {
@@ -145,7 +166,6 @@ export default function OrdersScreen() {
         return;
       }
 
-      // Always replace a previous/stale email when Profile reports a new one.
       if (email === lastEmailRef.current) {
         return;
       }
@@ -170,7 +190,6 @@ export default function OrdersScreen() {
       clearWebAccountSession();
     }
 
-    // After logout completes, return to orders/account home.
     if (
       webUri === ACCOUNT_LOGOUT_URL &&
       (url.includes('/logout') ||
@@ -183,9 +202,42 @@ export default function OrdersScreen() {
     }
   }
 
+  function continueToDelete() {
+    if (!webAccountEmail) {
+      return;
+    }
+    clearDeleteIntent();
+    openAccount('Profile');
+  }
+
   return (
     <ScreenLayout showBack onBack={closeOverlay}>
       <View className="flex-1">
+        {pendingDeleteIntent ? (
+          <View
+            className="border-b px-4 py-3"
+            style={{ borderColor: colors.border, backgroundColor: colors.background }}
+          >
+            <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+              Delete account
+            </Text>
+            <Text className="mt-1 text-xs leading-5" style={{ color: colors.textMuted }}>
+              {webAccountEmail
+                ? `Signed in as ${webAccountEmail}. Continue to confirm deletion.`
+                : 'Sign in if needed, stay on the Profile tab so we can read your email, then continue.'}
+            </Text>
+            {webAccountEmail ? (
+              <Pressable
+                className="mt-3 items-center self-start rounded-full px-5 py-2.5"
+                style={{ backgroundColor: '#DC2626' }}
+                onPress={continueToDelete}
+              >
+                <Text className="text-sm font-semibold text-white">Continue to Delete</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
         {isLoading ? (
           <View className="absolute inset-0 z-10 items-center justify-center bg-white dark:bg-gray-950">
             <ActivityIndicator size="large" color={colors.brand} />

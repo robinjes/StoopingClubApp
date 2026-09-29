@@ -12,10 +12,14 @@ type WebAccountSessionValue = {
   webAccountEmail: string | null;
   /** When true, Orders WebView should load the Shopify logout URL then clear. */
   pendingWebSignOut: boolean;
+  /** User tapped Delete Account before a WebView session email was available. */
+  pendingDeleteIntent: boolean;
   setWebAccountEmail: (email: string | null) => void;
   clearWebAccountSession: () => void;
   requestWebSignOut: () => void;
   consumeWebSignOut: () => void;
+  beginDeleteIntent: () => void;
+  clearDeleteIntent: () => void;
 };
 
 const WebAccountSessionContext = createContext<WebAccountSessionValue | null>(null);
@@ -33,6 +37,7 @@ export function normalizeDetectedEmail(value: string | null | undefined): string
 export function WebAccountSessionProvider({ children }: { children: ReactNode }) {
   const [webAccountEmail, setWebAccountEmailState] = useState<string | null>(null);
   const [pendingWebSignOut, setPendingWebSignOut] = useState(false);
+  const [pendingDeleteIntent, setPendingDeleteIntent] = useState(false);
 
   const setWebAccountEmail = useCallback((email: string | null) => {
     setWebAccountEmailState(normalizeDetectedEmail(email));
@@ -44,6 +49,7 @@ export function WebAccountSessionProvider({ children }: { children: ReactNode })
 
   const requestWebSignOut = useCallback(() => {
     setWebAccountEmailState(null);
+    setPendingDeleteIntent(false);
     setPendingWebSignOut(true);
   }, []);
 
@@ -51,22 +57,36 @@ export function WebAccountSessionProvider({ children }: { children: ReactNode })
     setPendingWebSignOut(false);
   }, []);
 
+  const beginDeleteIntent = useCallback(() => {
+    setPendingDeleteIntent(true);
+  }, []);
+
+  const clearDeleteIntent = useCallback(() => {
+    setPendingDeleteIntent(false);
+  }, []);
+
   const value = useMemo(
     () => ({
       webAccountEmail,
       pendingWebSignOut,
+      pendingDeleteIntent,
       setWebAccountEmail,
       clearWebAccountSession,
       requestWebSignOut,
       consumeWebSignOut,
+      beginDeleteIntent,
+      clearDeleteIntent,
     }),
     [
       webAccountEmail,
       pendingWebSignOut,
+      pendingDeleteIntent,
       setWebAccountEmail,
       clearWebAccountSession,
       requestWebSignOut,
       consumeWebSignOut,
+      beginDeleteIntent,
+      clearDeleteIntent,
     ],
   );
 

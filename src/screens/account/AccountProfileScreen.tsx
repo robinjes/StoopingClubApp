@@ -24,7 +24,12 @@ export default function AccountProfileScreen() {
   const { soundsEnabled, setSoundsEnabled } = useFeedback();
   const { isConfigured, logout, error: contextError } = useCustomer();
   const { clearCart } = useCart();
-  const { webAccountEmail, clearWebAccountSession, requestWebSignOut } = useWebAccountSession();
+  const {
+    webAccountEmail,
+    clearWebAccountSession,
+    requestWebSignOut,
+    beginDeleteIntent,
+  } = useWebAccountSession();
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -184,7 +189,10 @@ export default function AccountProfileScreen() {
             <Pressable
               className="mt-6 rounded-full px-8 py-3.5"
               style={{ backgroundColor: colors.brandDark }}
-              onPress={() => openAccount('Orders')}
+              onPress={() => {
+                beginDeleteIntent();
+                openAccount('Orders');
+              }}
             >
               <Text className="font-semibold text-white">Open Account</Text>
             </Pressable>

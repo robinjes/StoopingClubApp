@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, Text, View } from 'react-native';
 
 import ThemeToggleSwitch from './ThemeToggleSwitch';
 import { useCustomer } from '../../context/CustomerContext';
@@ -24,7 +24,12 @@ export default function AccountDropdown({
   const { colors, isDark, toggleTheme } = useTheme();
   const { openAccount } = useOverlay();
   const { isAuthenticated, profile, logout } = useCustomer();
-  const { webAccountEmail, clearWebAccountSession, requestWebSignOut } = useWebAccountSession();
+  const {
+    webAccountEmail,
+    clearWebAccountSession,
+    requestWebSignOut,
+    beginDeleteIntent,
+  } = useWebAccountSession();
 
   const signedInEmail = webAccountEmail ?? profile?.email ?? null;
   const isSignedIn = Boolean(isAuthenticated && profile) || Boolean(webAccountEmail);
@@ -33,6 +38,21 @@ export default function AccountDropdown({
   function handleNavigate(route: AccountRoute) {
     onClose();
     openAccount(route);
+  }
+
+  function handleDeleteAccount() {
+    onClose();
+    if (webAccountEmail || (isAuthenticated && profile)) {
+      openAccount('Profile');
+      return;
+    }
+
+    beginDeleteIntent();
+    Alert.alert(
+      'Sign in to delete',
+      'Open your Shopify account Profile tab so we can confirm your email, then continue to Delete Account.',
+      [{ text: 'Continue', onPress: () => openAccount('Orders') }],
+    );
   }
 
   async function handleSignOut() {
@@ -119,7 +139,7 @@ export default function AccountDropdown({
               accessibilityLabel="Delete account"
               className="mt-4 items-center rounded-full border py-3"
               style={{ borderColor: '#DC2626' }}
-              onPress={() => handleNavigate('Profile')}
+              onPress={handleDeleteAccount}
             >
               <Text className="text-sm font-semibold" style={{ color: '#DC2626' }}>
                 Delete Account
