@@ -10,6 +10,7 @@ import {
   useWebAccountSession,
 } from '../../context/WebAccountSessionContext';
 import { CUSTOMER_ORDERS_URL } from '../../services/shopify/customerAuth';
+import { HIDE_SHOP_LOGIN_JS } from '../../utils/hideShopLogin';
 
 const ACCOUNT_ORIGIN = 'https://account.berkeleystooping.org';
 const ACCOUNT_PROFILE_URL = `${ACCOUNT_ORIGIN}/profile`;
@@ -256,6 +257,7 @@ export default function OrdersScreen() {
             }
           }}
           onNavigationStateChange={handleNavigation}
+          injectedJavaScriptBeforeContentLoaded={HIDE_SHOP_LOGIN_JS}
           injectedJavaScript={DETECT_ACCOUNT_EMAIL_JS}
           onMessage={handleMessage}
           javaScriptEnabled

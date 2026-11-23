@@ -9,6 +9,7 @@ import type { CartStackParamList } from '../../navigation/stacks/CartStack';
 import { sendOrderConfirmationMessage } from '../../services/notifications/orderConfirmation';
 import { useTheme } from '../../context/ThemeContext';
 import { isCheckoutCompleteUrl } from '../../utils/checkout';
+import { HIDE_SHOP_LOGIN_JS } from '../../utils/hideShopLogin';
 
 type CheckoutScreenProps = NativeStackScreenProps<CartStackParamList, 'Checkout'>;
 
@@ -49,6 +50,7 @@ export default function CheckoutScreen({ navigation, route }: CheckoutScreenProp
         ) : null}
         <WebView
           source={{ uri: checkoutUrl }}
+          injectedJavaScriptBeforeContentLoaded={HIDE_SHOP_LOGIN_JS}
           onLoadStart={() => setIsLoading(true)}
           onLoadEnd={() => setIsLoading(false)}
           onNavigationStateChange={(event) => {
