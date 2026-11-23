@@ -246,7 +246,8 @@ export default function CartScreen() {
               </View>
 
               <Text className="mb-4 text-xs leading-5" style={{ color: colors.textMuted }}>
-                All items are free. Local pickup only. No returns.
+                All items are free. Local pickup only. No returns. Any email address can check
+                out.
               </Text>
 
               <View className="mb-4">
